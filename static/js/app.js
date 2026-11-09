@@ -1,6 +1,7 @@
-// Site-wide behaviour: the light/dark switch and the rotating "typewriter" word.
-// Nothing here changes server-rendered content outside these two widgets, so
-// text such as the A/B button is never touched.
+// Site-wide behaviour: the light/dark switch, the rotating "typewriter" word,
+// and the home page's scroll reveal and AI answer replay. Nothing here changes
+// server-rendered content outside those widgets, so text such as the A/B
+// button is never touched.
 (function () {
   "use strict";
 
@@ -119,4 +120,95 @@
   } else {
     window.addEventListener("load", initRotators);
   }
+
+  /* ---------- Home page: scroll reveal and AI answer streaming ----------
+     Both are decoration on top of server-rendered content: without JS, or with
+     reduced motion, everything is simply shown in its final state.
+
+     [data-reveal]  fades up the first time it scrolls into view. Elements
+                    already on screen at load are left alone (no flash).
+     [data-stream]  replays an AI answer while visible: "thinking" dots, then
+                    the [data-stream-text] words one by one, then the citations. */
+  if (reducedMotion || !("IntersectionObserver" in window)) return;
+
+  var revealer = new IntersectionObserver(
+    function (entries) {
+      entries.forEach(function (entry) {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.remove("reveal-wait");
+        revealer.unobserve(entry.target);
+      });
+    },
+    { rootMargin: "0px 0px -12% 0px" }
+  );
+
+  document.querySelectorAll("[data-reveal]").forEach(function (el) {
+    if (el.getBoundingClientRect().top < window.innerHeight * 0.88) return;
+    el.classList.add("reveal-wait");
+    revealer.observe(el);
+  });
+
+  function streamer(el) {
+    var textEl = el.querySelector("[data-stream-text]");
+    if (!textEl) return null;
+    // Wrap every word once. The full answer stays laid out at its final size;
+    // replaying only fades words in, so the card never grows or jumps.
+    var words = textEl.textContent.trim().split(/\s+/);
+    textEl.textContent = "";
+    var toks = words.map(function (word, i) {
+      if (i) textEl.appendChild(document.createTextNode(" "));
+      var tok = document.createElement("span");
+      tok.className = "tok";
+      tok.textContent = word;
+      textEl.appendChild(tok);
+      return tok;
+    });
+    var visible = false;
+    var running = false;
+
+    function play() {
+      if (!visible || document.hidden) {
+        running = false;
+        return;
+      }
+      running = true;
+      toks.forEach(function (tok) {
+        tok.classList.remove("on", "last");
+      });
+      el.classList.add("is-replaying", "is-thinking");
+      setTimeout(function () {
+        el.classList.remove("is-thinking");
+        el.classList.add("is-streaming");
+        var i = 0;
+        (function next() {
+          if (i < toks.length) {
+            if (i) toks[i - 1].classList.remove("last");
+            toks[i++].classList.add("on", "last");
+            return setTimeout(next, 45 + Math.random() * 70);
+          }
+          el.classList.remove("is-streaming");
+          setTimeout(play, 6500);
+        })();
+      }, 1500);
+    }
+
+    return function (isVisible) {
+      visible = isVisible;
+      if (visible && !running) play();
+    };
+  }
+
+  var streamWatch = new IntersectionObserver(
+    function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.target._stream) entry.target._stream(entry.isIntersecting);
+      });
+    },
+    { threshold: 0.4 }
+  );
+
+  document.querySelectorAll("[data-stream]").forEach(function (el) {
+    el._stream = streamer(el);
+    if (el._stream) streamWatch.observe(el);
+  });
 })();
