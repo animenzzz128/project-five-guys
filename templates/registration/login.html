@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}Log in · Admit Compass{% endblock %}
+{% block main_class %}auth-page{% endblock %}
+
+{% block content %}
+<div class="auth-grid">
+  {% include "registration/_auth_intro.html" with cta="Log in" %}
+
+  <section id="account" class="auth-card card" aria-labelledby="login-title">
+    <p class="card-label">Log in</p>
+    <h2 id="login-title" class="card-title">Welcome back</h2>
+
+    <form method="post" action="{% url 'login' %}" class="form" novalidate>
+      {% csrf_token %}
+      {% if form.non_field_errors %}
+        <div class="form-alert" role="alert">{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>
+      {% endif %}
+      {% include "partials/form_field.html" with field=form.username %}
+      {% include "partials/form_field.html" with field=form.password %}
+      {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+      <button type="submit" class="key key-primary key-block">Log in</button>
+    </form>
+
+    <p class="card-foot">New here? <a href="{% url 'signup' %}{% if next %}?next={{ next|urlencode }}{% endif %}">Create an account</a></p>
+  </section>
+</div>
+{% endblock %}

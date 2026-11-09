@@ -1,0 +1,31 @@
+{# Left column on the log-in and sign-up pages: what the product does, in three steps. #}
+<section class="auth-intro" aria-labelledby="auth-intro-title">
+  <p class="eyebrow"><span class="spectrum">College, grad school, and beyond</span></p>
+  <h1 id="auth-intro-title" class="auth-title">
+    Find schools that fit<br>
+    <span class="rotate" data-rotate="who you are|your budget|your interests|your plans"><span class="rotate-word spectrum" aria-hidden="true">who you are</span><span class="rotate-caret" aria-hidden="true"></span><span class="visually-hidden">who you are</span></span>
+  </h1>
+  <p class="auth-lede">Tell us what you care about and what you can afford. We'll suggest schools worth a look and tell you why each one made the list.</p>
+  <ol class="steps">
+    <li>
+      <span class="tile tile-capture" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M13.2 2.5 5.6 13.2h5.3l-1.4 8.3 8-11h-5.5z" fill="currentColor"/></svg>
+      </span>
+      <span><strong>Capture</strong> ideas when they come to you. Later they're material for your essays.</span>
+    </li>
+    <li>
+      <span class="tile tile-discover" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M10 3.5l1.6 4.4 4.4 1.6-4.4 1.6L10 15.5l-1.6-4.4L4 9.5l4.4-1.6zM17.5 13l.9 2.4 2.4.9-2.4.9-.9 2.4-.9-2.4-2.4-.9 2.4-.9z" fill="currentColor"/></svg>
+      </span>
+      <span><strong>Discover</strong> what you like and how you work, through two short quizzes and a chat with our AI.</span>
+    </li>
+    <li>
+      <span class="tile tile-match" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15.6 8.4 13.4 13.4 8.4 15.6 10.6 10.6z" fill="currentColor"/></svg>
+      </span>
+      <span><strong>Match</strong> with schools in your price range, with a plain reason for each one.</span>
+    </li>
+  </ol>
+  {# Phones: the pitch comes first, this jumps down to the form. Hidden on wide screens. #}
+  <a class="key key-primary jump-to-form" href="#account">{{ cta|default:"Get started" }} <span aria-hidden="true">↓</span></a>
+</section>

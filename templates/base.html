@@ -1,0 +1,86 @@
+{% load static %}<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Admit Compass{% endblock %}</title>
+  <meta name="description" content="{% block description %}Find schools that fit who you are and what you can afford, with a plain reason for every suggestion.{% endblock %}">
+  <meta name="color-scheme" content="light dark">
+  {# Set the theme before first paint: saved choice, else the OS setting. #}
+  <script>
+    (function () {
+      var t = null;
+      try { t = localStorage.getItem("theme"); } catch (e) {}
+      if (t !== "light" && t !== "dark") {
+        t = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      }
+      document.documentElement.setAttribute("data-theme", t);
+    })();
+  </script>
+  <link rel="icon" href="{% static 'img/compass.svg' %}" type="image/svg+xml">
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+  {% block extra_head %}{% endblock %}
+</head>
+<body class="{% block body_class %}{% endblock %}">
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div class="backdrop" aria-hidden="true"><span class="aura aura-a"></span><span class="aura aura-b"></span><span class="aura aura-c"></span></div>
+
+  <header class="nav">
+    <div class="nav-inner">
+      <a class="brand" href="/" aria-label="Admit Compass home">
+        <img class="brand-mark" src="{% static 'img/compass.svg' %}" alt="" width="28" height="28">
+        <span class="brand-word">Admit Compass</span>
+      </a>
+
+      <nav class="nav-links" aria-label="Main">
+        {% block nav_links %}{% endblock %}
+      </nav>
+
+      <div class="nav-actions">
+        <button type="button" class="switch theme-switch" role="switch" aria-checked="false" aria-label="Dark mode" data-theme-switch>
+          <span class="switch-track">
+            <svg class="track-icon track-sun" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="3.2" fill="currentColor"/><g stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M8 1.2v1.8M8 13v1.8M1.2 8h1.8M13 8h1.8M3.2 3.2l1.3 1.3M11.5 11.5l1.3 1.3M3.2 12.8l1.3-1.3M11.5 4.5l1.3-1.3"/></g></svg>
+            <svg class="track-icon track-moon" viewBox="0 0 16 16" aria-hidden="true"><path d="M13.6 10.4A6 6 0 0 1 5.6 2.4a6 6 0 1 0 8 8z" fill="currentColor"/></svg>
+            <span class="switch-knob">
+              <svg class="knob-icon knob-sun" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="3.2" fill="currentColor"/><g stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M8 1.2v1.8M8 13v1.8M1.2 8h1.8M13 8h1.8M3.2 3.2l1.3 1.3M11.5 11.5l1.3 1.3M3.2 12.8l1.3-1.3M11.5 4.5l1.3-1.3"/></g></svg>
+              <svg class="knob-icon knob-moon" viewBox="0 0 16 16" aria-hidden="true"><path d="M13.6 10.4A6 6 0 0 1 5.6 2.4a6 6 0 1 0 8 8z" fill="currentColor"/></svg>
+            </span>
+          </span>
+        </button>
+
+        {% if user.is_authenticated %}
+          <span class="nav-user" title="{{ user.email|default:user.get_username }}">{{ user.email|default:user.get_username }}</span>
+          <form class="nav-logout" method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button type="submit" class="key key-sm">Log out</button>
+          </form>
+        {% else %}
+          <a class="nav-text-link" href="{% url 'login' %}">Log in</a>
+          <a class="key key-sm key-primary" href="{% url 'signup' %}">Sign up</a>
+        {% endif %}
+      </div>
+    </div>
+  </header>
+
+  <main id="main" class="page {% block main_class %}{% endblock %}">
+    {% if messages %}
+      <div role="status">
+        <ul class="flash">
+          {% for message in messages %}
+            <li class="flash-item flash-{{ message.tags|default:'info' }}"><span class="jewel" aria-hidden="true"></span>{{ message }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="footer">
+    <p><span class="nowrap">Admit Compass</span> · <span class="nowrap">A Yale MGT 656 student project</span></p>
+  </footer>
+
+  <script src="{% static 'js/app.js' %}" defer></script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}Sign up · Admit Compass{% endblock %}
+{% block main_class %}auth-page{% endblock %}
+
+{% block content %}
+<div class="auth-grid">
+  {% include "registration/_auth_intro.html" with cta="Get started" %}
+
+  <section id="account" class="auth-card card" aria-labelledby="signup-title">
+    <p class="card-label">Sign up</p>
+    <h2 id="signup-title" class="card-title">Create your account</h2>
+
+    <form method="post" action="{% url 'signup' %}" class="form" novalidate>
+      {% csrf_token %}
+      {% if form.non_field_errors %}
+        <div class="form-alert" role="alert">{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>
+      {% endif %}
+      {% with field=form.applicant_type %}
+        <fieldset class="field choice-field{% if field.errors %} field-invalid{% endif %}"{% if field.errors %} aria-describedby="{{ field.auto_id }}_error"{% endif %}>
+          <legend class="field-label">{{ field.label }}</legend>
+          <div class="choices">
+            {% for radio, value, title, hint in form.applicant_options %}
+              <label class="choice" for="{{ radio.id_for_label }}">
+                {{ radio.tag }}
+                {% include "partials/applicant_icon.html" with kind=value %}
+                <span class="choice-title">{{ title }}</span>
+                <span class="choice-hint">{{ hint }}</span>
+                <span class="choice-check" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M4 8.4 6.8 11 12 5.4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+              </label>
+            {% endfor %}
+          </div>
+          {% if field.errors %}
+            <div class="field-errors" id="{{ field.auto_id }}_error">
+              {% for error in field.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+            </div>
+          {% endif %}
+        </fieldset>
+      {% endwith %}
+      {% include "partials/form_field.html" with field=form.email %}
+      {% include "partials/form_field.html" with field=form.password1 %}
+      {% include "partials/form_field.html" with field=form.password2 %}
+      {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+      <button type="submit" class="key key-primary key-block">Create account</button>
+    </form>
+
+    <p class="card-foot">Already have an account? <a href="{% url 'login' %}{% if next %}?next={{ next|urlencode }}{% endif %}">Log in</a></p>
+  </section>
+</div>
+{% endblock %}

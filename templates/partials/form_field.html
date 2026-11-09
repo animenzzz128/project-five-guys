@@ -1,0 +1,12 @@
+{# One labelled form field with its help text and errors. Usage: {% include "partials/form_field.html" with field=form.email %} #}
+{# Django adds aria-describedby / aria-invalid to the input, pointing at the ids used below. #}
+<div class="field{% if field.errors %} field-invalid{% endif %}">
+  <label class="field-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+  {{ field }}
+  {% if field.help_text %}<p class="field-help" id="{{ field.auto_id }}_helptext">{{ field.help_text|safe }}</p>{% endif %}
+  {% if field.errors %}
+    <div class="field-errors" id="{{ field.auto_id }}_error">
+      {% for error in field.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+    </div>
+  {% endif %}
+</div>
