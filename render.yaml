@@ -19,3 +19,8 @@ services:
         sync: false # paste the Neon staging connection string in the dashboard
       - key: WEB_CONCURRENCY
         value: "2"
+      # Grader passwords for `manage.py seed`; set the values in the dashboard.
+      - key: SEED_ADMIN_PASSWORD
+        sync: false
+      - key: SEED_STUDENT_PASSWORD
+        sync: false
