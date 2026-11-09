@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{# Signed-in landing page. Owner: B. Styles: static/css/app.css "Dashboard". #}
+
+{% block title %}Dashboard · Admit Compass{% endblock %}
+{% block body_class %}home{% endblock %}
+{% block main_class %}dash-page{% endblock %}
+
+{% block content %}
+<section class="dash-head" aria-labelledby="dash-title">
+  <div class="rise" style="--d: 0">
+    <p class="eyebrow"><span class="spectrum">{% if profile %}{{ profile.get_applicant_type_display }}{% else %}Your dashboard{% endif %}</span></p>
+    <h1 id="dash-title" class="dash-title">Hi, {{ display_name }}</h1>
+    <p class="dash-lede">{{ lede }}</p>
+  </div>
+
+  <div class="progress-card glass rise" style="--d: 1; --p: {{ progress }}">
+    <svg class="ring" viewBox="0 0 80 80" aria-hidden="true">
+      <defs>
+        <linearGradient id="ring-grad" x1="0" y1="0" x2="1" y2="1">
+          <stop class="stop-a" offset="0"/><stop class="stop-b" offset=".55"/><stop class="stop-c" offset="1"/>
+        </linearGradient>
+      </defs>
+      <circle class="ring-track" cx="40" cy="40" r="34"/>
+      <circle class="ring-fill" cx="40" cy="40" r="34" stroke="url(#ring-grad)"/>
+    </svg>
+    <p class="progress-text"><b class="num">{{ steps_done }} of {{ steps|length }}</b><span>steps done</span></p>
+  </div>
+</section>
+
+<section class="journey glass rise" style="--d: 2" aria-labelledby="journey-title">
+  <h2 id="journey-title" class="card-label">Your path</h2>
+  <ol class="journey-steps">
+    {% for step in steps %}
+      <li class="journey-step{% if step.done %} is-done{% endif %}{% if step.is_next %} is-next{% endif %}">
+        <span class="tile tile-{{ step.key }}" aria-hidden="true">
+          {% if step.key == "priorities" %}<svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="16" cy="7" r="2.4" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="8" cy="17" r="2.4" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+          {% elif step.key == "search" %}<svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="m15 15 5 5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
+          {% elif step.key == "shortlist" %}<svg viewBox="0 0 24 24"><path d="M7 3.5h10a1 1 0 0 1 1 1v16l-6-3.6-6 3.6v-16a1 1 0 0 1 1-1z" fill="currentColor"/></svg>
+          {% elif step.key == "compare" %}<svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="7" height="14" rx="1.6" fill="currentColor"/><rect x="13.5" y="5" width="7" height="14" rx="1.6" fill="currentColor" opacity=".65"/></svg>
+          {% else %}<svg viewBox="0 0 24 24"><path d="M4 5.5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-7l-4.5 3.8V16.5H6a2 2 0 0 1-2-2z" fill="currentColor"/></svg>{% endif %}
+        </span>
+        <span class="step-body">
+          <b class="step-title">{{ forloop.counter }}. {{ step.title }}</b>
+          <span class="step-text">{{ step.text }}</span>
+          {% if step.done %}
+            <span class="status status-done"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 8.4 6.8 11 12 5.4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Done</span>
+          {% elif step.is_next %}
+            <span class="status status-next">Up next · coming soon</span>
+          {% else %}
+            <span class="status">Coming soon</span>
+          {% endif %}
+        </span>
+      </li>
+    {% endfor %}
+  </ol>
+</section>
+
+<div class="dash-grid">
+  <section class="dash-card glass dash-shortlist" data-reveal aria-labelledby="shortlist-title">
+    <div class="dash-card-head">
+      <h2 id="shortlist-title" class="dash-card-title">Your shortlist</h2>
+      <span class="count-pill num">{{ school_count }} school{{ school_count|pluralize }}</span>
+    </div>
+    {% if recent_items %}
+      <ul class="dash-schools">
+        {% for item in recent_items %}
+          <li class="dash-school">
+            <span class="mono">{{ item.institution.name|first }}</span>
+            <span class="result-text">
+              <b>{{ item.institution.name }}</b>
+              <small>{% if item.institution.city %}{{ item.institution.city }}, {% endif %}{{ item.institution.state }}{% if item.institution.ownership %} · {{ item.institution.get_ownership_display }}{% endif %}</small>
+              {% if item.note %}<small class="school-note">{{ item.note }}</small>{% endif %}
+            </span>
+            {% if item.institution.is_sample %}<span class="sample-badge" title="Seeded demo data, not federal data">Demo data</span>{% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+      {% if shortlist_count > 1 %}<p class="dash-foot">Across {{ shortlist_count }} shortlists.</p>{% endif %}
+    {% else %}
+      <div class="empty">
+        <span class="tile tile-shortlist" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 3.5h10a1 1 0 0 1 1 1v16l-6-3.6-6 3.6v-16a1 1 0 0 1 1-1z" fill="currentColor"/></svg></span>
+        <p><b>No schools yet.</b> Once search opens, save the schools worth a closer look and they'll show up here.</p>
+      </div>
+    {% endif %}
+  </section>
+
+  <section class="dash-card glass ai-glow dash-ai" data-reveal style="--d: 1" aria-labelledby="ai-card-title">
+    <div class="dash-card-head">
+      <span class="chat-avatar" aria-hidden="true"><svg class="sparkle" viewBox="0 0 24 24"><path d="M12 2.5c.6 4.6 3.3 7.4 8 8-4.7.6-7.4 3.4-8 8-.6-4.6-3.3-7.4-8-8 4.7-.6 7.4-3.4 8-8z"/></svg></span>
+      <h2 id="ai-card-title" class="dash-card-title">Ask Admit Compass</h2>
+      <span class="soon soon-inline">Coming soon</span>
+    </div>
+    <p class="dash-card-text">Ask about your shortlist in plain language. Every answer cites the data it used.</p>
+    <p class="card-label">Try asking</p>
+    <ul class="prompt-chips">
+      {% if recent_items %}
+        <li class="chip">Is {{ recent_items.0.institution.name }} a reach for me?</li>
+      {% else %}
+        <li class="chip">Is Yale a reach for me?</li>
+      {% endif %}
+      <li class="chip">Which schools fit my budget?</li>
+      <li class="chip">Where do graduates earn the most?</li>
+    </ul>
+  </section>
+
+  <section class="dash-card glass dash-priorities" data-reveal style="--d: 2" aria-labelledby="prio-title">
+    <div class="dash-card-head">
+      <h2 id="prio-title" class="dash-card-title">Your priorities</h2>
+      <span class="soon soon-inline">Coming soon</span>
+    </div>
+    <p class="dash-card-text">Tell us what matters and every search starts from it.</p>
+    <ul class="prio-slots" aria-label="Priorities you'll be able to set">
+      <li>Budget</li><li>Region</li><li>Size</li><li>Major</li><li>Public or private</li>
+    </ul>
+  </section>
+
+  <section class="dash-card glass dash-account" data-reveal style="--d: 3" aria-labelledby="account-title">
+    <h2 id="account-title" class="dash-card-title">Account</h2>
+    <dl class="account-list">
+      <div><dt>Email</dt><dd>{{ user.email|default:user.get_username }}</dd></div>
+      <div><dt>I am a</dt><dd>{% if profile %}{{ profile.get_applicant_type_display }}{% else %}Not set{% endif %}</dd></div>
+      <div><dt>Member since</dt><dd>{{ user.date_joined|date:"M j, Y" }}</dd></div>
+    </dl>
+  </section>
+</div>
+{% endblock %}

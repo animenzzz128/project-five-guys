@@ -2182,6 +2182,420 @@ textarea {
   gap: 8px;
 }
 
+/* ---------- Dashboard (owner: B) ----------
+   Same materials as the home page: glass cards, icon tiles, the spectrum.
+   Head: greeting + a progress ring. Then the five-step path, then cards. */
+.dash-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 32px;
+}
+
+.dash-title {
+  margin-top: 10px;
+  font-size: clamp(36px, 5vw, 56px);
+  overflow-wrap: anywhere;
+}
+
+.dash-lede {
+  margin-top: 12px;
+  max-width: 36em;
+  font-size: 19px;
+  color: var(--ink-2);
+}
+
+.progress-card {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 24px 16px 16px;
+  border-radius: 999px;
+}
+
+.ring {
+  width: 64px;
+  height: 64px;
+  transform: rotate(-90deg);
+}
+
+.ring circle {
+  fill: none;
+  stroke-width: 8;
+}
+
+.ring-track {
+  stroke: var(--fill);
+}
+
+.ring-fill {
+  stroke-linecap: round;
+  stroke-dasharray: 213.6;
+  stroke-dashoffset: calc(213.6 * (1 - var(--p)));
+  animation: ring-in 1.4s cubic-bezier(0.2, 0.8, 0.2, 1) 0.3s both;
+}
+
+@keyframes ring-in {
+  from {
+    stroke-dashoffset: 213.6;
+  }
+}
+
+.stop-a {
+  stop-color: var(--tint);
+}
+
+.stop-b {
+  stop-color: var(--tint-2);
+}
+
+.stop-c {
+  stop-color: var(--tint-3);
+}
+
+.progress-text {
+  display: grid;
+  line-height: 1.25;
+}
+
+.progress-text b {
+  font-size: 20px;
+}
+
+.progress-text span {
+  font-size: 14px;
+  color: var(--ink-3);
+}
+
+/* ----- The five-step path ----- */
+.journey {
+  margin-top: 36px;
+  padding: 24px;
+}
+
+.journey-steps {
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.journey-step {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px;
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--surface) 55%, transparent);
+  box-shadow: inset 0 0 0 0.5px var(--separator);
+  transition: transform 0.3s ease;
+}
+
+.journey-step .tile {
+  filter: saturate(0.35);
+  opacity: 0.7;
+}
+
+.journey-step.is-done .tile,
+.journey-step.is-next .tile {
+  filter: none;
+  opacity: 1;
+}
+
+/* the next step gets the spectrum rim, like everything the product suggests */
+.journey-step.is-next {
+  background: var(--surface);
+  box-shadow: 0 10px 30px -14px color-mix(in srgb, var(--tint-2) 60%, transparent);
+}
+
+.journey-step.is-next::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  padding: 1.5px;
+  border-radius: inherit;
+  background: conic-gradient(from var(--angle), #5ac8fa, #0071e3, #5e5ce6, #bf5af2, #e0457b, #ff9f0a, #5ac8fa);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  animation: spin 7s linear infinite;
+  pointer-events: none;
+}
+
+.step-body {
+  display: grid;
+  gap: 4px;
+}
+
+.step-title {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.step-text {
+  font-size: 13px;
+  color: var(--ink-3);
+}
+
+.status {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-3);
+  background: var(--fill);
+}
+
+.status svg {
+  width: 12px;
+  height: 12px;
+}
+
+.status-done {
+  color: var(--ok);
+  background: color-mix(in srgb, var(--ok) 14%, transparent);
+}
+
+.status-next {
+  color: var(--tint-2);
+  background: color-mix(in srgb, var(--tint-2) 13%, transparent);
+}
+
+/* ----- Cards ----- */
+.dash-grid {
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.dash-card {
+  padding: 24px;
+}
+
+.dash-shortlist {
+  grid-column: span 2;
+  grid-row: span 2;
+}
+
+.dash-card-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dash-card-title {
+  flex: 1;
+  font-size: 20px;
+  letter-spacing: -0.02em;
+}
+
+.dash-card-text {
+  margin-top: 8px;
+  font-size: 15px;
+  color: var(--ink-2);
+}
+
+.count-pill {
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--tint-ink);
+  background: color-mix(in srgb, var(--tint) 12%, transparent);
+}
+
+.soon-inline {
+  position: static;
+  flex: none;
+}
+
+.dash-schools {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+}
+
+.dash-school {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 0;
+  border-top: 0.5px solid var(--separator);
+}
+
+.dash-school:first-child {
+  border-top: 0;
+}
+
+.dash-school .mono {
+  --tile: linear-gradient(135deg, #5ac8fa, #0071e3);
+  --tile-shadow: #0071e3;
+  font-size: 17px;
+}
+
+.dash-school:nth-child(3n + 2) .mono {
+  --tile: linear-gradient(135deg, #b18cff, #5e5ce6);
+  --tile-shadow: #5e5ce6;
+}
+
+.dash-school:nth-child(3n + 3) .mono {
+  --tile: linear-gradient(135deg, #ff8fb4, #e0457b);
+  --tile-shadow: #e0457b;
+}
+
+.dash-school .result-text b {
+  white-space: normal;
+}
+
+.school-note {
+  margin-top: 2px;
+  font-style: italic;
+}
+
+.sample-badge {
+  flex: none;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-3);
+  background: var(--fill);
+}
+
+.dash-foot {
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--ink-3);
+}
+
+.empty {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 18px;
+  padding: 20px;
+  border-radius: 18px;
+  border: 1px dashed var(--fill-strong);
+  color: var(--ink-2);
+}
+
+.dash-ai .chat-avatar {
+  flex: none;
+}
+
+.dash-ai .card-label {
+  margin-top: 18px;
+}
+
+.prompt-chips {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.prompt-chips .chip {
+  font-weight: 500;
+}
+
+.prio-slots {
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.prio-slots li {
+  padding: 6px 13px;
+  border-radius: 999px;
+  border: 1px dashed var(--fill-strong);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-3);
+}
+
+.dash-account {
+  grid-column: 1 / -1;
+}
+
+.account-list {
+  margin: 12px 0 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.account-list dt {
+  font-size: 13px;
+  color: var(--ink-3);
+}
+
+.account-list dd {
+  margin: 2px 0 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 960px) {
+  .journey-steps {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .journey-step {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .dash-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .dash-shortlist,
+  .dash-account {
+    grid-column: auto;
+    grid-row: auto;
+  }
+}
+
+@media (max-width: 640px) {
+  .dash-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .progress-card {
+    align-self: flex-start;
+  }
+
+  .account-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* signed in on a phone: keep the Dashboard link, drop the wordmark to make room */
+  .nav:has(.nav-links a) .nav-links {
+    display: flex;
+  }
+
+  .nav:has(.nav-links a) .brand-word {
+    display: none;
+  }
+}
+
 /* ---------- Generic page header for other pages ---------- */
 .page-head {
   margin-bottom: 32px;

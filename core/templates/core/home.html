@@ -22,8 +22,11 @@
     {% if user.is_authenticated %}
       <p class="home-welcome glass rise" style="--d: 3">
         <span class="jewel" aria-hidden="true"></span>
-        <span>Welcome back, <strong>{{ user.email|default:user.get_username }}</strong>. Search, your shortlist and the AI advisor arrive over the next sprints.</span>
+        <span>Welcome back, <strong>{{ user.email|default:user.get_username }}</strong>. Pick up where you left off.</span>
       </p>
+      <div class="home-actions rise" style="--d: 4">
+        <a class="key key-primary key-lg" href="{% url 'dashboard' %}">Open your dashboard</a>
+      </div>
     {% else %}
       <div class="home-actions rise" style="--d: 3">
         <a class="key key-primary key-lg" href="{% url 'signup' %}">Get started, it's free</a>

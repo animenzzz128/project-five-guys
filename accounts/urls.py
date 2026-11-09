@@ -1,4 +1,4 @@
-"""Owner: B. Account routes, at the top level like most web apps (/login/, /signup/).
+"""Owner: B. Account routes, at the top level like most web apps (/login/, /signup/, /dashboard/).
 
 /login without the slash redirects to /login/ (Django's APPEND_SLASH), so the
 short form works too. The names "login" / "logout" / "signup" are what
@@ -13,4 +13,5 @@ urlpatterns = [
     path("login/", views.LoginView.as_view(), name="login"),
     path("logout/", views.LogoutView.as_view(), name="logout"),
     path("signup/", views.signup, name="signup"),
+    path("dashboard/", views.dashboard, name="dashboard"),
 ]

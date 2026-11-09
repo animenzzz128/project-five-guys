@@ -136,7 +136,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # Matches django.contrib.auth.urls mounted under /accounts/ (B's choice to change).
 LOGIN_URL = "login"
-LOGIN_REDIRECT_URL = "/"
+LOGIN_REDIRECT_URL = "dashboard"  # B: signed-in users land on /dashboard/
 LOGOUT_REDIRECT_URL = "/"
 
 
