@@ -1,15 +1,13 @@
 framework: django
 database: postgres
 members:
-  # TODO(E): replace the four TODO nicknames with each teammate's course nickname
-  # (the one the course site shows for them), then delete this comment.
-  - nickname: TODO-a-nickname
+  - nickname: puzzled-reindeer
     github: animenzzz128
-  - nickname: TODO-b-nickname
+  - nickname: careful-bee
     github: Yida1201
-  - nickname: TODO-c-nickname
+  - nickname: inquisitive-wombat
     github: haloikuy
-  - nickname: TODO-d-nickname
+  - nickname: poised-ferret
     github: LuanfengBest
   - nickname: encouraging-dove
     github: trippleway
