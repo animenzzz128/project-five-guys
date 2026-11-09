@@ -28,9 +28,9 @@ class SignupTests(TestCase):
         self.assertContains(response, 'name="email"')
         self.assertContains(response, "csrfmiddlewaretoken")
 
-    def test_valid_signup_creates_user_logs_in_and_redirects_home(self):
+    def test_valid_signup_creates_user_logs_in_and_lands_on_dashboard(self):
         response = self.post()
-        self.assertRedirects(response, "/", fetch_redirect_response=False)
+        self.assertRedirects(response, "/dashboard/", fetch_redirect_response=False)
         user = User.objects.get()
         self.assertEqual(user.email, "student@example.com")
         self.assertEqual(user.username, "student@example.com")
@@ -71,7 +71,7 @@ class SignupTests(TestCase):
 
     def test_offsite_next_is_ignored(self):
         response = self.post(next="https://evil.example.com/")
-        self.assertRedirects(response, "/", fetch_redirect_response=False)
+        self.assertRedirects(response, "/dashboard/", fetch_redirect_response=False)
 
     def test_applicant_type_is_saved_on_a_profile(self):
         self.post(kind="professional")
@@ -112,18 +112,18 @@ class SignupTests(TestCase):
                 self.post()
         self.assertFalse(User.objects.exists())
 
-    def test_logged_in_user_is_sent_home(self):
+    def test_logged_in_user_is_sent_to_dashboard(self):
         user = User.objects.create_user("a@example.com", "a@example.com", GOOD_PASSWORD)
         self.client.force_login(user)
         response = self.client.get(self.url)
-        self.assertRedirects(response, "/", fetch_redirect_response=False)
+        self.assertRedirects(response, "/dashboard/", fetch_redirect_response=False)
 
     def test_next_pointing_at_account_page_cannot_loop(self):
         user = User.objects.create_user("a@example.com", "a@example.com", GOOD_PASSWORD)
         self.client.force_login(user)
         for target in ("/signup/", "/login/", "/logout/"):
             response = self.client.get(f"{self.url}?next={target}")
-            self.assertRedirects(response, "/", fetch_redirect_response=False)
+            self.assertRedirects(response, "/dashboard/", fetch_redirect_response=False)
 
     def test_next_survives_a_failed_attempt(self):
         response = self.client.post(self.url, {"email": "bad", "password1": "x", "password2": "y", "next": "/fd986fa"})
@@ -153,7 +153,7 @@ class LoginTests(TestCase):
 
     def test_login_with_email(self):
         response = self.login("student@example.com")
-        self.assertRedirects(response, "/", fetch_redirect_response=False)
+        self.assertRedirects(response, "/dashboard/", fetch_redirect_response=False)
         self.assertLoggedInAs(self.student)
 
     def test_login_email_is_case_and_space_insensitive(self):
@@ -214,12 +214,12 @@ class LoginTests(TestCase):
         for target in ("https://evil.example.com/", "//evil.example.com/", "javascript:alert(1)"):
             self.client.logout()
             response = self.login("student@example.com", next=target)
-            self.assertRedirects(response, "/", fetch_redirect_response=False)
+            self.assertRedirects(response, "/dashboard/", fetch_redirect_response=False)
 
     def test_logged_in_visit_with_next_to_login_does_not_500(self):
         self.client.force_login(self.student)
         response = self.client.get(f"{self.url}?next=/login/")
-        self.assertRedirects(response, "/", fetch_redirect_response=False)
+        self.assertRedirects(response, "/dashboard/", fetch_redirect_response=False)
 
     def test_next_survives_a_failed_attempt(self):
         response = self.login("student@example.com", "wrong", next="/fd986fa")
@@ -342,3 +342,84 @@ class BaseLayoutTests(TestCase):
     def test_static_assets_exist(self):
         for path in ("css/app.css", "js/app.js", "img/compass.svg"):
             self.assertIsNotNone(finders.find(path), path)
+
+
+class DashboardTests(TestCase):
+    url = reverse("dashboard")
+
+    def make_user(self, email="a@example.com", applicant_type=ApplicantType.HIGH_SCHOOL):
+        user = User.objects.create_user(email, email, GOOD_PASSWORD)
+        if applicant_type:
+            Profile.objects.create(user=user, applicant_type=applicant_type)
+        return user
+
+    def add_school(self, user, unitid, name="Calder College"):
+        from core.models import Institution, Shortlist, ShortlistItem
+
+        shortlist, _ = Shortlist.objects.get_or_create(user=user, name="My shortlist")
+        institution = Institution.objects.create(unitid=unitid, name=name, city="Rosewood", state="MA")
+        ShortlistItem.objects.create(shortlist=shortlist, institution=institution, note="Reach.")
+        return institution
+
+    def test_logged_out_visitor_is_sent_to_log_in(self):
+        response = self.client.get(self.url)
+        self.assertRedirects(response, f"/login/?next={self.url}", fetch_redirect_response=False)
+
+    def test_full_flow_sign_up_then_log_out_then_log_in_lands_on_dashboard(self):
+        signup = self.client.post(
+            reverse("signup"),
+            {"applicant_type": ApplicantType.COLLEGE, "email": "new@example.com",
+             "password1": GOOD_PASSWORD, "password2": GOOD_PASSWORD},
+            follow=True,
+        )
+        self.assertRedirects(signup, self.url)
+        self.assertContains(signup, "Hi, new")
+        self.assertContains(signup, "Transferring or heading to grad school?")
+
+        logout = self.client.post(reverse("logout"), follow=True)
+        self.assertRedirects(logout, "/")
+
+        login = self.client.post(reverse("login"), {"username": "new@example.com", "password": GOOD_PASSWORD}, follow=True)
+        self.assertRedirects(login, self.url)
+        self.assertContains(login, 'aria-current="page">Dashboard</a>', html=False)
+
+    def test_new_user_sees_first_step_up_next_and_empty_shortlist(self):
+        self.client.force_login(self.make_user())
+        response = self.client.get(self.url)
+        self.assertContains(response, "0 of 5")
+        self.assertContains(response, "Up next · coming soon", count=1)
+        self.assertContains(response, "No schools yet.")
+
+    def test_user_with_a_shortlist_sees_schools_and_steps_done(self):
+        user = self.make_user()
+        self.add_school(user, 900002)
+        self.client.force_login(user)
+        response = self.client.get(self.url)
+        self.assertContains(response, "Calder College")
+        self.assertContains(response, "Rosewood, MA")
+        self.assertContains(response, "Demo data")
+        self.assertContains(response, "2 of 5")
+        self.assertContains(response, "1 school")
+        self.assertContains(response, "Is Calder College a reach for me?")
+
+    def test_another_users_shortlist_is_never_shown(self):
+        other = self.make_user("other@example.com")
+        self.add_school(other, 900003, name="Harbor Point Technical Institute")
+        self.client.force_login(self.make_user())
+        response = self.client.get(self.url)
+        self.assertNotContains(response, "Harbor Point")
+        self.assertContains(response, "No schools yet.")
+
+    def test_account_without_profile_still_works(self):
+        # Seed and createsuperuser accounts have no Profile.
+        self.client.force_login(self.make_user("grader@example.com", applicant_type=None))
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Here&#x27;s where your college search stands")
+        self.assertContains(response, "Not set")
+
+    def test_no_link_points_at_a_page_that_does_not_exist_yet(self):
+        self.client.force_login(self.make_user())
+        response = self.client.get(self.url)
+        for path in ("/colleges/", "/shortlist/", "/profile/preferences/"):
+            self.assertNotContains(response, f'href="{path}')
