@@ -9,12 +9,12 @@ Postgres, accounts, the A/B page, seed data, CI and a public staging deploy —
 before any product feature is built. Nothing in this sprint is meant to be the
 finished product; it is meant to prove the pipeline.
 
-## Status as of Nov 9, 2026
+## Final review status — Nov 9, 2026
 
-The implementation work from A–D is now on `main`. PR #13 contains E's
-documentation and project-management work and remains open for review. This
-report records the current Sprint 1 evidence; the remaining staging checks stay
-open until they are verified against the current `main` deployment.
+All implementation work from A–D is now on `main`. PR #13 contains E's final
+project-management and documentation update, remains open for review, and has
+not been merged. The evidence and checks below distinguish verified behavior
+from the two checks that still require credentials or server-command access.
 
 ## What shipped
 
@@ -30,17 +30,17 @@ open until they are verified against the current `main` deployment.
 
 Staging: https://noble-shape-staging.onrender.com
 
-- [ ] Health endpoint responds on the current `main` deployment.
-- [ ] User can sign up, log in and log out with the grading account.
-- [ ] `/fd986fa` and `/fd986fa/stats` are reachable on the current `main` deployment.
-- [ ] Refreshing the A/B page preserves the assigned version.
-- [ ] Repeating the same A/B action does not record a second impression.
-- [ ] The 375 px-wide layout has no horizontal scrolling.
-- [ ] Seed data is present after `python manage.py seed`.
-- [ ] CI is green for the deployed commit.
+- [x] `/healthz` responds with `{"status": "ok", "database": "postgresql"}`.
+- [ ] User can sign up, log in and log out with the grading account (requires the grading credentials).
+- [x] `/fd986fa` and `/fd986fa/stats` are reachable.
+- [x] Refreshing the A/B page preserves the assigned variant.
+- [x] Repeating the same A/B click does not add a second click; the stats remained unchanged after two repeat clicks.
+- [x] The A/B page has no horizontal scrolling at a 375 px-wide viewport.
+- [ ] Seed data after `python manage.py seed` requires command-level verification on the deployment.
+- [x] CI is green for the current PR #13 commit and for the latest `main` commits.
 
-All items remain unchecked until E completes and records a manual walkthrough
-against the deployment that corresponds to current `main`.
+The only remaining validation is the grading-account login flow and a direct
+server-side `seed` command check; neither is marked complete without evidence.
 
 ## Working with our agents
 
@@ -49,8 +49,8 @@ Two concrete review findings guided the final implementation. In [#4](https://gi
 ## Backlog changes for Sprint 2
 
 The Project now carries nine user stories across four dated iterations. The
-Sprint 1 item [#14](https://github.com/animenzzz128/project-five-guys/issues/14)
-must remain on the Project and be assigned to the Sprint 1 iteration.
+completed Sprint 1 item [#14](https://github.com/animenzzz128/project-five-guys/issues/14)
+is on the Project and assigned to the Sprint 1 iteration.
 
 - Sprint 2: [#7](https://github.com/animenzzz128/project-five-guys/issues/7) and [#8](https://github.com/animenzzz128/project-five-guys/issues/8)
 - Sprint 3: [#9](https://github.com/animenzzz128/project-five-guys/issues/9) and [#10](https://github.com/animenzzz128/project-five-guys/issues/10)
