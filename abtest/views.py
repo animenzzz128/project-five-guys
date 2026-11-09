@@ -24,7 +24,7 @@ TEAM_NICKNAMES = [
     "careful-bee",
     "puzzled-reindeer",
     "inquisitive-wombat",
-    "teammate-5",  # TODO: replace with the fifth member's real course nickname
+    "encouraging-dove",
 ]
 
 VARIANTS = [Variant.KUDOS.value, Variant.THANKS.value]
