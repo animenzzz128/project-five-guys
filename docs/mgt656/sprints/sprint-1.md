@@ -9,58 +9,52 @@ Postgres, accounts, the A/B page, seed data, CI and a public staging deploy —
 before any product feature is built. Nothing in this sprint is meant to be the
 finished product; it is meant to prove the pipeline.
 
+## Status as of Nov 9, 2026
+
+The implementation work from A–D is now on `main`. PR #13 contains E's
+documentation and project-management work and remains open for review. This
+report records the current Sprint 1 evidence; the remaining staging checks stay
+open until they are verified against the current `main` deployment.
+
 ## What shipped
 
-<!-- TODO(E) on merge day: replace each row's PR number and tick the box once it is merged. -->
-
-| Area | Owner | Issue | PR |
+| Area | Owner | Issue | Evidence |
 | --- | --- | --- | --- |
-| Repo skeleton, settings from env, Render + Neon deploy, CI | A (animenzzz128) | — | TODO |
+| Repo skeleton, settings from environment, Render + Neon deploy, CI | A (animenzzz128) | — | [`d73d149`](https://github.com/animenzzz128/project-five-guys/commit/d73d149) pushed directly to `main` |
 | Accounts (sign up / log in / log out) + `base.html` layout | B (Yida1201) | [#1](https://github.com/animenzzz128/project-five-guys/issues/1) | [#2](https://github.com/animenzzz128/project-five-guys/pull/2) |
 | A/B page at `/fd986fa` and `/fd986fa/stats` | C (haloikuy) | [#5](https://github.com/animenzzz128/project-five-guys/issues/5) | [#6](https://github.com/animenzzz128/project-five-guys/pull/6) |
-| `core` models + idempotent `seed` command | D (LuanfengBest) | — | [#4](https://github.com/animenzzz128/project-five-guys/pull/4) |
-| Backlog, GitHub Project with four iterations, `docs/mgt656/` | E (trippleway) | — | TODO |
+| `core` models + idempotent `seed` command | D (LuanfengBest) | [#14](https://github.com/animenzzz128/project-five-guys/issues/14) | [#4](https://github.com/animenzzz128/project-five-guys/pull/4) |
+| Backlog, GitHub Project with four iterations, `docs/mgt656/` | E (trippleway) | — | [#13](https://github.com/animenzzz128/project-five-guys/pull/13) (open for review) |
 
 ## What works on staging
 
 Staging: https://noble-shape-staging.onrender.com
 
-<!-- TODO(E) on merge day: tick these off after walking the list on staging yourself. -->
+- [ ] Health endpoint responds on the current `main` deployment.
+- [ ] User can sign up, log in and log out with the grading account.
+- [ ] `/fd986fa` and `/fd986fa/stats` are reachable on the current `main` deployment.
+- [ ] Refreshing the A/B page preserves the assigned version.
+- [ ] Repeating the same A/B action does not record a second impression.
+- [ ] The 375 px-wide layout has no horizontal scrolling.
+- [ ] Seed data is present after `python manage.py seed`.
+- [ ] CI is green for the deployed commit.
 
-- [ ] Home page loads in a private window
-- [ ] A grader account from `seed` can log in, and log out returns to the logged-out state
-- [ ] No horizontal scroll at 375px
-- [ ] `/fd986fa` loads logged out and has exactly one `<button id="abtest">` reading `kudos` or `thanks`
-- [ ] Ten reloads keep the same variant and add one impression; two clicks add one click
-- [ ] `/fd986fa/stats` returns JSON whose `preferred` is the higher click-rate variant
-- [ ] `seed` runs twice on an empty database with no errors and no duplicates
+All items remain unchecked until E completes and records a manual walkthrough
+against the deployment that corresponds to current `main`.
 
 ## Working with our agents
 
-<!-- TODO(E) on merge day: replace this paragraph with one concrete thing from this sprint. -->
-
-The useful lesson this sprint was that the agents are only as good as the
-acceptance criteria they are handed. The first stories we wrote were one-line
-descriptions, and the generated code looked plausible but missed the parts
-nobody had written down — `?next=` redirect safety on login, and counting an
-impression again after the A/B form posted back. We rewrote the backlog so every
-story's acceptance criteria are checkable sentences naming routes, status codes
-and the exact counting behaviour, and we review against that list rather than
-against the diff. The split of one app folder per person was the other thing
-that held: `migrations` are made per app, so no two agents produced conflicting
-migration files.
+Two concrete review findings guided the final implementation. In [#4](https://github.com/animenzzz128/project-five-guys/pull/4), the initial AI-assisted seed command placed the grading-account password in the public repository. Review moved that value to an environment variable and added a test so it cannot be reintroduced. In [#6](https://github.com/animenzzz128/project-five-guys/pull/6), a test initially mocked all of `secrets.choice`, which also interfered with Django session-key generation. The fix restricted the mock to the single A/B-assignment call. These reviews kept secrets out of source control and made the A/B test deterministic without breaking session behavior.
 
 ## Backlog changes for Sprint 2
 
-The board now carries eight `user story` issues across four iterations
-(Sprint 1: Nov 2–11, Sprint 2: Nov 12–18, Sprint 3: Nov 19–Dec 2,
-Sprint 4: Dec 3–11).
+The Project now carries nine user stories across four dated iterations. The
+Sprint 1 item [#14](https://github.com/animenzzz128/project-five-guys/issues/14)
+must remain on the Project and be assigned to the Sprint 1 iteration.
 
-Committed to Sprint 2:
+- Sprint 2: [#7](https://github.com/animenzzz128/project-five-guys/issues/7) and [#8](https://github.com/animenzzz128/project-five-guys/issues/8)
+- Sprint 3: [#9](https://github.com/animenzzz128/project-five-guys/issues/9) and [#10](https://github.com/animenzzz128/project-five-guys/issues/10)
+- Sprint 4: [#11](https://github.com/animenzzz128/project-five-guys/issues/11) and [#12](https://github.com/animenzzz128/project-five-guys/issues/12)
 
-- [#7 Search and filter colleges from College Scorecard data](https://github.com/animenzzz128/project-five-guys/issues/7)
-- [#8 Add and remove colleges on my shortlist](https://github.com/animenzzz128/project-five-guys/issues/8)
-
-Planned later: #9 and #10 (compare, and the AI question feature) in Sprint 3;
-#11 and #12 (shared read-only link, saved preferences) in Sprint 4. Anything
-unfinished from Sprint 1 moves forward rather than being deleted.
+The committed Sprint 2 items are #7 and #8; the remaining items stay planned in
+their later iterations so the team can reprioritize them if validation changes.
