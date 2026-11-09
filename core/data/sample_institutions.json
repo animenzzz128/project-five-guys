@@ -1,0 +1,64 @@
+{
+  "_note": "Fictional institutions used to seed local, CI and staging databases. They are NOT federal data: every row is stored with data_release = 'SAMPLE' so the interface can label it. Real rows arrive via `python manage.py import_scorecard`.",
+  "institutions": [
+    {"unitid": 900001, "name": "Northvale State University", "city": "Northvale", "state": "MI",
+     "ownership": 1, "predominant_degree": 3, "enrollment_undergrad": 21400,
+     "admission_rate": "0.6120", "sat_average": 1210, "tuition_in_state": 14800,
+     "tuition_out_of_state": 38900, "cost_attendance": 31200, "completion_rate_150": "0.7340",
+     "retention_rate": "0.8810", "median_earnings_10yr": 61800, "median_debt": 21500},
+
+    {"unitid": 900002, "name": "Calder College", "city": "Rosewood", "state": "MA",
+     "ownership": 2, "predominant_degree": 3, "enrollment_undergrad": 2150,
+     "admission_rate": "0.2480", "sat_average": 1420, "tuition_in_state": 58400,
+     "tuition_out_of_state": 58400, "cost_attendance": 76200, "completion_rate_150": "0.9120",
+     "retention_rate": "0.9550", "median_earnings_10yr": 84300, "median_debt": 17200},
+
+    {"unitid": 900003, "name": "Harbor Point Technical Institute", "city": "Bayside", "state": "CA",
+     "ownership": 1, "predominant_degree": 3, "enrollment_undergrad": 11900,
+     "admission_rate": "0.3310", "sat_average": 1360, "tuition_in_state": 13200,
+     "tuition_out_of_state": 44100, "cost_attendance": 34800, "completion_rate_150": "0.8470",
+     "retention_rate": "0.9280", "median_earnings_10yr": 96500, "median_debt": 18900},
+
+    {"unitid": 900004, "name": "Prairie Grove University", "city": "Prairie Grove", "state": "KS",
+     "ownership": 1, "predominant_degree": 3, "enrollment_undergrad": 8700,
+     "admission_rate": "0.8940", "sat_average": 1080, "tuition_in_state": 9600,
+     "tuition_out_of_state": 24300, "cost_attendance": 22400, "completion_rate_150": "0.5120",
+     "retention_rate": "0.7420", "median_earnings_10yr": 44200, "median_debt": 23800},
+
+    {"unitid": 900005, "name": "Saint Aldric College", "city": "Fairhaven", "state": "PA",
+     "ownership": 2, "predominant_degree": 3, "enrollment_undergrad": 1480,
+     "admission_rate": "0.7650", "sat_average": 1130, "tuition_in_state": 41200,
+     "tuition_out_of_state": 41200, "cost_attendance": 55900, "completion_rate_150": "0.6380",
+     "retention_rate": "0.8010", "median_earnings_10yr": 52700, "median_debt": 26400},
+
+    {"unitid": 900006, "name": "Lakeshore Community College", "city": "Lakeshore", "state": "WI",
+     "ownership": 1, "predominant_degree": 2, "enrollment_undergrad": 6300,
+     "admission_rate": null, "sat_average": null, "tuition_in_state": 4900,
+     "tuition_out_of_state": 8700, "cost_attendance": 15600, "completion_rate_150": "0.3240",
+     "retention_rate": "0.6150", "median_earnings_10yr": 38600, "median_debt": 11200},
+
+    {"unitid": 900007, "name": "Verity University", "city": "Oak Hollow", "state": "TX",
+     "ownership": 3, "predominant_degree": 3, "enrollment_undergrad": 14200,
+     "admission_rate": null, "sat_average": null, "tuition_in_state": 17800,
+     "tuition_out_of_state": 17800, "cost_attendance": 29100, "completion_rate_150": "0.2870",
+     "retention_rate": "0.5340", "median_earnings_10yr": 36900, "median_debt": 31700},
+
+    {"unitid": 900008, "name": "Mount Caddell College", "city": "Caddell", "state": "VT",
+     "ownership": 2, "predominant_degree": 3, "enrollment_undergrad": 940,
+     "admission_rate": "0.5420", "sat_average": null, "tuition_in_state": 47600,
+     "tuition_out_of_state": 47600, "cost_attendance": 63100, "completion_rate_150": null,
+     "retention_rate": "0.8340", "median_earnings_10yr": null, "median_debt": 24100},
+
+    {"unitid": 900009, "name": "Riverbend State University", "city": "Riverbend", "state": "OR",
+     "ownership": 1, "predominant_degree": 3, "enrollment_undergrad": 18600,
+     "admission_rate": "0.7210", "sat_average": 1150, "tuition_in_state": 12400,
+     "tuition_out_of_state": 35600, "cost_attendance": 28700, "completion_rate_150": "0.6490",
+     "retention_rate": "0.8360", "median_earnings_10yr": 53400, "median_debt": 22900},
+
+    {"unitid": 900010, "name": "Ashford Hill University", "city": "Ashford Hill", "state": "NY",
+     "ownership": 2, "predominant_degree": 4, "enrollment_undergrad": 7250,
+     "admission_rate": "0.1890", "sat_average": 1480, "tuition_in_state": 62100,
+     "tuition_out_of_state": 62100, "cost_attendance": 81400, "completion_rate_150": "0.9380",
+     "retention_rate": "0.9710", "median_earnings_10yr": 102800, "median_debt": 15800}
+  ]
+}
