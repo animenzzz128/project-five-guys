@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 
 def home(request):
-    # Placeholder landing page; B can switch it to extend templates/base.html.
+    # Landing page. The template extends templates/base.html; its layout is B's.
     return render(request, "core/home.html")
 
 

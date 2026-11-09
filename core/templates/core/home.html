@@ -1,15 +1,257 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Admit Compass</title>
-</head>
-<body>
-  <main>
-    <h1>Admit Compass</h1>
-    <p>Build a college shortlist from federal data. Coming soon.</p>
-    {% if user.is_authenticated %}<p>Signed in as {{ user.get_username }}.</p>{% endif %}
-  </main>
-</body>
-</html>
+{% extends "base.html" %}
+{# Landing page. Layout, styles and motion: B (static/css/app.css "Home page", static/js/app.js "Home page"). #}
+{% load static %}
+
+{% block title %}Admit Compass · Build a college shortlist you can explain{% endblock %}
+{% block body_class %}home{% endblock %}
+{% block main_class %}home-page{% endblock %}
+
+{% block content %}
+<section class="home-hero" aria-labelledby="home-title">
+  <div class="home-copy">
+    <p class="ai-badge glass rise" style="--d: 0">
+      <svg class="sparkle" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5c.6 4.6 3.3 7.4 8 8-4.7.6-7.4 3.4-8 8-.6-4.6-3.3-7.4-8-8 4.7-.6 7.4-3.4 8-8z"/></svg>
+      <span>AI college research, grounded in federal data</span>
+    </p>
+    <h1 id="home-title" class="home-title rise" style="--d: 1">
+      A college shortlist<br>
+      <span class="spectrum shimmer">you can explain</span>
+    </h1>
+    <p class="home-lede rise" style="--d: 2">Start from what matters to you, not from a name you already know. Search every U.S. college in the College Scorecard, keep the ones that fit, and ask our AI anything about your list. Every answer shows the data behind it.</p>
+
+    {% if user.is_authenticated %}
+      <p class="home-welcome glass rise" style="--d: 3">
+        <span class="jewel" aria-hidden="true"></span>
+        <span>Welcome back, <strong>{{ user.email|default:user.get_username }}</strong>. Search, your shortlist and the AI advisor arrive over the next sprints.</span>
+      </p>
+    {% else %}
+      <div class="home-actions rise" style="--d: 3">
+        <a class="key key-primary key-lg" href="{% url 'signup' %}">Get started, it's free</a>
+        <a class="key key-lg" href="{% url 'login' %}">Log in</a>
+      </div>
+      <p class="home-fineprint rise" style="--d: 4">Free for students, parents, and counselors.</p>
+    {% endif %}
+  </div>
+
+  {# Decorative: a search driven by the student's priorities (not a name), Yale saved, and the AI explaining why. #}
+  <div class="hero-stage rise" style="--d: 2" aria-hidden="true">
+    <div class="preview-shadow"></div>
+    <div class="preview glass">
+      <div class="preview-bar">
+        <span class="lights"><i></i><i></i><i></i></span>
+        <span class="preview-url">admitcompass · Search</span>
+      </div>
+      <div class="preview-body">
+        <div class="well well-smart">
+          <svg class="sparkle" viewBox="0 0 24 24"><path d="M12 2.5c.6 4.6 3.3 7.4 8 8-4.7.6-7.4 3.4-8 8-.6-4.6-3.3-7.4-8-8 4.7-.6 7.4-3.4 8-8z"/></svg>
+          <span>Filtered by your priorities</span>
+        </div>
+        <div class="chips"><span class="chip chip-on">Private</span><span class="chip chip-on">New England</span><span class="chip chip-on">Under 8,000 students</span><span class="chip">+ Add</span></div>
+        <ul class="results">
+          <li class="result is-saved">
+            <span class="mono mono-yale">Y</span>
+            <span class="result-text"><b>Yale University</b><small>New Haven, CT · Private</small></span>
+            <span class="save"><svg viewBox="0 0 24 24"><path d="M7 3.5h10a1 1 0 0 1 1 1v16l-6-3.6-6 3.6v-16a1 1 0 0 1 1-1z"/></svg></span>
+          </li>
+          <li class="result">
+            <span class="mono mono-b">B</span>
+            <span class="result-text"><b>Brown University</b><small>Providence, RI · Private</small></span>
+            <span class="save"><svg viewBox="0 0 24 24"><path d="M7 3.5h10a1 1 0 0 1 1 1v16l-6-3.6-6 3.6v-16a1 1 0 0 1 1-1z"/></svg></span>
+          </li>
+          <li class="result">
+            <span class="mono mono-c">D</span>
+            <span class="result-text"><b>Dartmouth College</b><small>Hanover, NH · Private</small></span>
+            <span class="save"><svg viewBox="0 0 24 24"><path d="M7 3.5h10a1 1 0 0 1 1 1v16l-6-3.6-6 3.6v-16a1 1 0 0 1 1-1z"/></svg></span>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="ai-card ai-glow glass" data-stream>
+      <p class="ai-q"><svg class="sparkle" viewBox="0 0 24 24"><path d="M12 2.5c.6 4.6 3.3 7.4 8 8-4.7.6-7.4 3.4-8 8-.6-4.6-3.3-7.4-8-8 4.7-.6 7.4-3.4 8-8z"/></svg>Why is Yale on my list?</p>
+      <div class="answer">
+        <span class="thinking"><i></i><i></i><i></i></span>
+        <p class="ai-a" data-stream-text>It matches 3 of your 4 priorities: private, in New England, and under 8,000 students. Its cost is above your budget, so I flagged it.</p>
+      </div>
+      <p class="ai-cites"><span class="cite">Scorecard · cost</span><span class="cite">Your priorities</span></p>
+    </div>
+  </div>
+</section>
+
+<section class="home-section" aria-labelledby="features-title">
+  <div class="section-head" data-reveal>
+    <p class="eyebrow"><span class="spectrum">How it works</span></p>
+    <h2 id="features-title" class="home-section-title">From thousands of schools to a few you can defend.</h2>
+  </div>
+
+  <ul class="bento">
+    <li class="feature glass feature-wide" data-reveal>
+      <div class="feature-copy">
+        <span class="tile tile-search" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="m15 15 5 5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
+        </span>
+        <h3 class="feature-title">Search</h3>
+        <p class="feature-text">Start from your priorities: region, cost, size, public or private. Or type a name you already know.</p>
+      </div>
+      <div class="demo demo-search" aria-hidden="true">
+        <div class="well">
+          <svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="m15 15 5 5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
+          <span class="well-hint">A name, if you have one</span>
+        </div>
+        <div class="chips"><span class="chip chip-on">Private</span><span class="chip chip-on">Northeast</span><span class="chip">Under $30k</span><span class="chip">Any size</span></div>
+        <div class="rows"><span></span><span></span><span></span></div>
+      </div>
+    </li>
+
+    <li class="feature glass" data-reveal style="--d: 1">
+      <div class="feature-copy">
+        <span class="tile tile-shortlist" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M7 3.5h10a1 1 0 0 1 1 1v16l-6-3.6-6 3.6v-16a1 1 0 0 1 1-1z" fill="currentColor"/></svg>
+        </span>
+        <h3 class="feature-title">Shortlist</h3>
+        <p class="feature-text">Save the schools worth a closer look, and drop them when they no longer fit.</p>
+      </div>
+      <div class="demo demo-stack" aria-hidden="true">
+        <span class="stack-card"></span><span class="stack-card"></span>
+        <span class="stack-card stack-top"><span class="ribbon"></span><span class="mini-lines"><span></span><span></span></span></span>
+      </div>
+    </li>
+
+    <li class="feature glass feature-full" data-reveal>
+      <div class="feature-copy">
+        <span class="tile tile-compare" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="7" height="14" rx="1.6" fill="currentColor"/><rect x="13.5" y="5" width="7" height="14" rx="1.6" fill="currentColor" opacity=".65"/></svg>
+        </span>
+        <h3 class="feature-title">Compare</h3>
+        <p class="feature-text">See your shortlist in one table: admission rate, cost, graduation rate, and earnings after college. Sort by what matters to you, not by someone else's ranking.</p>
+      </div>
+      <div class="demo demo-bars" aria-hidden="true">
+        <span class="bar" style="--h: 58%"></span>
+        <span class="bar bar-hi" style="--h: 88%"></span>
+        <span class="bar" style="--h: 42%"></span>
+        <span class="bar" style="--h: 70%"></span>
+        <span class="bar" style="--h: 50%"></span>
+      </div>
+    </li>
+  </ul>
+</section>
+
+<section class="home-section ai-section" aria-labelledby="ai-title">
+  <div class="ai-orb" aria-hidden="true"></div>
+  <div class="section-head" data-reveal>
+    <p class="eyebrow"><span class="spectrum">Built-in AI</span></p>
+    <h2 id="ai-title" class="home-section-title">An advisor that shows its work.</h2>
+    <p class="section-lede">Ask about your shortlist the way you'd ask a counselor. The AI answers from real data and your own priorities, and tells you where each fact came from.</p>
+  </div>
+
+  <div class="ai-grid">
+    <ul class="ai-points">
+      <li data-reveal>
+        <span class="tile tile-ask" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 5.5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-7l-4.5 3.8V16.5H6a2 2 0 0 1-2-2z" fill="currentColor"/></svg></span>
+        <span><h3 class="ai-point-title">Ask in plain language</h3><span class="ai-point-text">“Is Yale a reach for me?” No filters or spreadsheets needed.</span></span>
+      </li>
+      <li data-reveal style="--d: 1">
+        <span class="tile tile-ground" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 4.5h14v15H5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M8.5 9h7M8.5 12.5h7M8.5 16h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+        <span><h3 class="ai-point-title">Grounded in real data</h3><span class="ai-point-text">Answers cite the College Scorecard fields they used, so you can check every number.</span></span>
+      </li>
+      <li data-reveal style="--d: 2">
+        <span class="tile tile-priorities" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="16" cy="7" r="2.4" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="8" cy="17" r="2.4" fill="none" stroke="currentColor" stroke-width="2"/></svg></span>
+        <span><h3 class="ai-point-title">Knows your priorities</h3><span class="ai-point-text">Tell it your budget, region, size and major. It flags schools that fall outside them.</span></span>
+      </li>
+      <li data-reveal style="--d: 3">
+        <span class="tile tile-private" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2.4" fill="currentColor"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5" fill="none" stroke="currentColor" stroke-width="2"/></svg></span>
+        <span><h3 class="ai-point-title">Private by design</h3><span class="ai-point-text">Only your own shortlist is sent to the model. Never anyone else's.</span></span>
+      </li>
+    </ul>
+
+    <div class="chat ai-glow glass" data-reveal data-stream aria-hidden="true">
+      <div class="chat-head">
+        <span class="chat-avatar"><svg class="sparkle" viewBox="0 0 24 24"><path d="M12 2.5c.6 4.6 3.3 7.4 8 8-4.7.6-7.4 3.4-8 8-.6-4.6-3.3-7.4-8-8 4.7-.6 7.4-3.4 8-8z"/></svg></span>
+        <span><b>Ask Admit Compass</b><small>About your shortlist · 5 schools</small></span>
+      </div>
+      <div class="chat-body">
+        <span class="bubble bubble-me">Is Yale a reach for me?</span>
+        <div class="bubble bubble-ai">
+          <div class="answer">
+            <span class="thinking"><i></i><i></i><i></i></span>
+            <p data-stream-text>Yes. Yale admits fewer than 1 in 10 applicants, so treat it as a reach for anyone. Two schools on your list admit more than half of their applicants; those are your likelier picks, so keep them.</p>
+          </div>
+          <p class="ai-cites"><span class="cite">Scorecard · admission rate</span><span class="cite">Your shortlist</span></p>
+        </div>
+      </div>
+      <div class="chat-input">
+        <span>Ask a follow-up…</span>
+        <span class="send"><svg viewBox="0 0 16 16"><path d="M8 13V3M3.5 7.5 8 3l4.5 4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </div>
+    </div>
+  </div>
+  <p class="home-source">School data comes from the U.S. Department of Education's College Scorecard. AI answers can be wrong; check the cited numbers.</p>
+</section>
+
+<section class="home-section" aria-labelledby="next-title">
+  <div class="section-head" data-reveal>
+    <p class="eyebrow"><span class="spectrum">After your shortlist</span></p>
+    <h2 id="next-title" class="home-section-title">Then the part that takes the longest: applying.</h2>
+    <p class="section-lede">Once your list is set, Admit Compass helps you spend your effort where it counts. These are coming next.</p>
+  </div>
+
+  <ul class="bento next-grid">
+    <li class="feature glass feature-wide" data-reveal>
+      <div class="feature-copy">
+        <span class="soon">Coming next</span>
+        <span class="tile tile-essay" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 3.5h8.5L19 8v12.5H6z" fill="currentColor"/><path d="M14.5 3.5V8H19" fill="none" stroke="#fff" stroke-opacity=".6" stroke-width="1.4"/><path d="M9 12h7M9 15h7M9 18h4" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/></svg></span>
+        <h3 class="feature-title">Essay planner</h3>
+        <p class="feature-text">The AI sorts every supplemental prompt on your list by type, so you can see which ones one strong draft can answer, and write fewer essays from scratch.</p>
+      </div>
+      <div class="demo demo-essays" aria-hidden="true">
+        <div class="prompt-group">
+          <p class="group-head"><span class="group-tag tag-why">“Why us?”</span><span class="group-count">1 draft · 3 schools</span></p>
+          <p class="group-schools"><span class="mono mono-yale">Y</span><span class="mono mono-b">B</span><span class="mono mono-c">D</span></p>
+        </div>
+        <div class="prompt-group">
+          <p class="group-head"><span class="group-tag tag-community">Community</span><span class="group-count">1 draft · 2 schools</span></p>
+          <p class="group-schools"><span class="mono mono-yale">Y</span><span class="mono mono-c">D</span></p>
+        </div>
+        <div class="prompt-group">
+          <p class="group-head"><span class="group-tag tag-curious">Curiosity</span><span class="group-count">1 draft · 1 school</span></p>
+          <p class="group-schools"><span class="mono mono-b">B</span></p>
+        </div>
+      </div>
+    </li>
+
+    <li class="feature glass" data-reveal style="--d: 1">
+      <div class="feature-copy">
+        <span class="soon">Coming next</span>
+        <span class="tile tile-similar" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="9" cy="12" r="5.5" fill="currentColor" opacity=".75"/><circle cx="15" cy="12" r="5.5" fill="currentColor"/></svg></span>
+        <h3 class="feature-title">Schools like Yale</h3>
+        <p class="feature-text">Pick a school you love and find others with similar size, cost, selectivity and outcomes, including ones you'd never have searched for.</p>
+      </div>
+      <div class="demo demo-similar" aria-hidden="true">
+        <span class="mono mono-yale">Y</span>
+        <span class="similar-traits"><span class="chip">Similar size</span><span class="chip">Similar cost</span><span class="chip">Similar outcomes</span></span>
+      </div>
+    </li>
+
+    <li class="feature glass feature-full" data-reveal>
+      <div class="feature-copy">
+        <span class="soon">Coming next</span>
+        <span class="tile tile-worked" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3.5 14.6 9l6 .7-4.4 4.1 1.2 5.9L12 16.8l-5.4 2.9 1.2-5.9L3.4 9.7l6-.7z" fill="currentColor"/></svg></span>
+        <h3 class="feature-title">Essays that worked</h3>
+        <p class="feature-text">For each prompt type, links to the sample essays colleges publish themselves, so you learn what a strong answer looks like. We point you to the source; we never write your essays for you.</p>
+      </div>
+      <div class="demo demo-links" aria-hidden="true">
+        <span class="link-row"><span class="group-tag tag-why">“Why us?”</span><span class="mini-lines"><span></span><span></span></span><span class="ext">↗</span></span>
+        <span class="link-row"><span class="group-tag tag-community">Community</span><span class="mini-lines"><span></span><span></span></span><span class="ext">↗</span></span>
+      </div>
+    </li>
+  </ul>
+</section>
+
+{% if not user.is_authenticated %}
+<section class="cta-panel ai-glow glass" aria-labelledby="cta-title" data-reveal>
+  <h2 id="cta-title" class="cta-title">Start with what matters to you.</h2>
+  <p class="cta-text">Make an account in under a minute. No credit card, no email verification.</p>
+  <a class="key key-primary key-lg" href="{% url 'signup' %}">Create your account</a>
+</section>
+{% endif %}
+{% endblock %}
