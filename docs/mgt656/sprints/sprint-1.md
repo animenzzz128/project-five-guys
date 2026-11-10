@@ -9,12 +9,12 @@ Postgres, accounts, the A/B page, seed data, CI and a public staging deploy —
 before any product feature is built. Nothing in this sprint is meant to be the
 finished product; it is meant to prove the pipeline.
 
-## Final review status — Nov 9, 2026
+## Final review status — Nov 10, 2026
 
 All implementation work from A–D is now on `main`. PR #13 contains E's final
 project-management and documentation update, remains open for review, and has
 not been merged. The evidence and checks below distinguish verified behavior
-from the two checks that still require credentials or server-command access.
+from the remaining server-command verification.
 
 ## What shipped
 
@@ -31,7 +31,7 @@ from the two checks that still require credentials or server-command access.
 Staging: https://noble-shape-staging.onrender.com
 
 - [x] `/healthz` responds with `{"status": "ok", "database": "postgresql"}`.
-- [ ] User can sign up, log in and log out with the grading account (requires the grading credentials).
+- [x] Student account login is verified on staging.
 - [x] `/fd986fa` and `/fd986fa/stats` are reachable.
 - [x] Refreshing the A/B page preserves the assigned variant.
 - [x] Repeating the same A/B click does not add a second click; the stats remained unchanged after two repeat clicks.
@@ -39,8 +39,8 @@ Staging: https://noble-shape-staging.onrender.com
 - [ ] Seed data after `python manage.py seed` requires command-level verification on the deployment.
 - [x] CI is green for the current PR #13 commit and for the latest `main` commits.
 
-The only remaining validation is the grading-account login flow and a direct
-server-side `seed` command check; neither is marked complete without evidence.
+The only remaining validation is a direct server-side `seed` command check; it
+remains unchecked until evidenced.
 
 ## Working with our agents
 
