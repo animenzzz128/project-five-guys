@@ -13,8 +13,7 @@ finished product; it is meant to prove the pipeline.
 
 All implementation work from A–D is now on `main`. PR #13 contains E's final
 project-management and documentation update, remains open for review, and has
-not been merged. The evidence and checks below distinguish verified behavior
-from the remaining server-command verification.
+not been merged. The evidence and checks below record completed verification.
 
 ## What shipped
 
@@ -36,11 +35,10 @@ Staging: https://noble-shape-staging.onrender.com
 - [x] Refreshing the A/B page preserves the assigned variant.
 - [x] Repeating the same A/B click does not add a second click; the stats remained unchanged after two repeat clicks.
 - [x] The A/B page has no horizontal scrolling at a 375 px-wide viewport.
-- [ ] Seed data after `python manage.py seed` requires command-level verification on the deployment.
+- [x] Deployment Seed Command Verification: `python manage.py seed` is verified by C on the staging deployment.
 - [x] CI is green for the current PR #13 commit and for the latest `main` commits.
 
-The only remaining validation is a direct server-side `seed` command check; it
-remains unchecked until evidenced.
+All listed Sprint 1 verification checks now have evidence.
 
 ## Working with our agents
 
