@@ -35,7 +35,7 @@ Staging: https://noble-shape-staging.onrender.com
 - [x] Refreshing the A/B page preserves the assigned variant.
 - [x] Repeating the same A/B click does not add a second click; the stats remained unchanged after two repeat clicks.
 - [x] The A/B page has no horizontal scrolling at a 375 px-wide viewport.
-- [x] Deployment Seed Command Verification: `python manage.py seed` is verified by C on the staging deployment.
+- [x] Deployment Seed Command Verification: `python manage.py seed` is verified on the staging deployment.
 - [x] CI is green for the current PR #13 commit and for the latest `main` commits.
 
 All listed Sprint 1 verification checks now have evidence.
