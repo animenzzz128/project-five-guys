@@ -1,6 +1,7 @@
 """Apply the reviewed catalog snapshot without performing network requests at deploy time."""
 
 import csv
+import gzip
 from pathlib import Path
 from urllib.parse import urlsplit
 
@@ -11,6 +12,16 @@ from django.db.models import Q
 from core.models import Program
 
 DATA = Path(__file__).resolve().parents[2] / "data"
+
+
+def official_site_url(url, home):
+    parts = urlsplit(url)
+    campus = (urlsplit(home).hostname or "").removeprefix("www.")
+    site = ".".join(campus.split(".")[-2:]) if campus.endswith(".edu") else campus
+    hostname = (parts.hostname or "").removeprefix("www.")
+    return (bool(site) and parts.scheme == "https" and parts.username is None and parts.password is None
+            and parts.port in (None, 443) and len(url) <= 600
+            and (hostname == site or (site.endswith(".edu") and hostname.endswith("." + site))))
 
 
 def read_links():
@@ -28,6 +39,16 @@ def read_links():
                     or not parsed.path.startswith(source["path_prefix"]) or len(url) > 600):
                 raise CommandError(f"Invalid or duplicate official catalog match for {key}")
             links[key] = url
+    with gzip.open(DATA / "scorecard_2026/institutions.csv.gz", "rt") as stream:
+        homes = {int(r["unitid"]): r["school_url"] for r in csv.DictReader(stream)}
+    with (DATA / "scorecard_2026/discovered_catalog_links.csv").open() as stream:
+        for row in csv.DictReader(stream):
+            key = (int(row["unitid"]), row["cip_code"], int(row["credential_level"]))
+            home = homes.get(key[0])
+            if (not home or key in links or key[0] in directories or key[2] != 3
+                    or not all(official_site_url(value, home) for value in [row["catalog_url"], row["index_url"]])):
+                raise CommandError(f"Invalid or duplicate discovered catalog match for {key}")
+            links[key] = row["catalog_url"]
     if not links:
         raise CommandError("Empty link snapshot")
     return links

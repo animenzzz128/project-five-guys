@@ -80,24 +80,56 @@ Rebuild the compact CSV extracts from those two official ZIP downloads with
 
 ### Verified official program links
 
-The November 16, 2026 snapshot adds 336 matched federal rows at 27 schools from
-30 configured campus directories. With the three independently verified BA/BS
-entries there are 339 linked records across 28 schools, 338 distinct URLs, and
-67,656 blank program URLs. These counts exclude homepage fallbacks.
+The November 16, 2026 snapshot covers 2,462 institutions. A local import of the
+snapshot produced the following counts. Only a link to an official program page
+counts toward coverage.
 
-To refresh, install `requirements-dev.txt` and run
-`python scripts/collect_program_links.py /tmp/catalog_links.csv`. Review the diff
-before replacing `core/data/scorecard_2026/catalog_links.csv`, particularly removals
-if a catalog is temporarily unavailable. Add supported campus indexes, their UNITIDs,
-and program-list selectors in `core/data/catalog_directories.csv`.
+| Source | Schools with a match | Program records with a link |
+| --- | ---: | ---: |
+| 30 configured campus directories | 27 | 336 |
+| Homepage discovery for the other 2,432 schools | 260 | 1,209 |
+| Individually curated Yale and Cornell degrees | 2 | 3 |
+| **Total, counting each school once** | **288** | **1,548** |
 
-The collector reads public, same-host HTTPS pages, observes robots exclusions,
-and checks both the official undergraduate index and the destination title.
-It accepts only one matching field and one unambiguous program URL per campus
-and normalized name. Separate BA/BS URLs for one federal field are ambiguous.
-A missing or blocked directory produces no matches. Sites outside the configured
-directories have not been scanned. Snapshot import uses the school, four-digit CIP
-and credential level; no external requests are made by the application.
+The 1,548 linked records point to 1,547 distinct URLs. Yale lists its BA and BS
+on the same page. Of 67,995 program records, 66,447 have a blank catalog URL.
+
+Open [the per-school scan results](core/data/scorecard_2026/catalog_scan_coverage.csv)
+to look up a school by name or UNITID. The `matches` column counts linked federal
+fields. The [new links](core/data/scorecard_2026/discovered_catalog_links.csv)
+include both the official page where the collector found each link and its
+destination. Across the 2,432 schools, 51 have no bachelor's field rows in the
+federal snapshot. Other outcomes distinguish pages with no confirmed match,
+unreachable homepages, ambiguous campus domains, and sites deferred because of
+a long crawl interval.
+
+Install `requirements-dev.txt` to refresh the data. For the configured directories,
+run `python scripts/collect_program_links.py /tmp/catalog_links.csv` and review the
+diff against `core/data/scorecard_2026/catalog_links.csv`. Their official indexes
+and selectors are in `core/data/catalog_directories.csv`.
+
+For the remaining schools, start from the official homepages in the institution
+snapshot. Run these commands from the repository root with fresh checkpoint
+directories for a new collection. Rerunning with the same directories resumes
+an interrupted scan. Each scan accepts `--offset` and `--limit` for smaller batches.
+
+```sh
+python -m scripts.scan_school_catalogs /tmp/catalog-first
+python -m scripts.scan_school_catalogs /tmp/catalog-deeper --retry-from /tmp/catalog-first
+python -m scripts.scan_school_catalogs /tmp/catalog-deeper --export core/data/scorecard_2026
+```
+
+The first pass tries up to five homepage or directory URLs per school, then
+opens eligible program detail pages. The second pass revisits schools without
+a match and can try up to ten directory URLs. The collector follows public HTML
+links on the school's official domain and observes robots exclusions and crawl
+intervals. It requires campus-specific evidence for shared sites, an exact
+normalized field name, a matching destination heading or title, undergraduate
+degree evidence, and a unique candidate URL among the pages visited. Separate
+BA and BS pages for one field can be ambiguous. External catalog providers and
+listings that require a search form or JavaScript can remain unmatched. Review
+the exported changes before committing them, particularly removals when a site
+is temporarily unavailable. The application imports the snapshots offline.
 
 After schema migration, `python manage.py import_scorecard` includes the links.
 For an existing nationwide catalog, `python manage.py apply_catalog_links`
