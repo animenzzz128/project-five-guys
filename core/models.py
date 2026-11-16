@@ -133,6 +133,7 @@ class Program(models.Model):
     catalog_year = models.CharField(max_length=20, blank=True)
     credential_level = models.PositiveSmallIntegerField(null=True, blank=True)
     data_release = models.CharField(max_length=20, blank=True)
+    last_collected_url = models.URLField(blank=True, max_length=600, editable=False)
     catalog_url = models.URLField(blank=True, max_length=600, help_text="Institution's official program or catalog page.")
 
     class Meta:

@@ -66,5 +66,6 @@ class Command(BaseCommand):
         institutions = import_institutions()
         school_ids = dict(Institution.objects.filter(data_release=SCHOOL_RELEASE).values_list("unitid", "pk"))
         fields = import_fields(school_ids)
+        call_command("apply_catalog_links", stdout=self.stdout)
         call_command("import_programs", str(DATA / "cs_programs.csv"), stdout=self.stdout)
         self.stdout.write(f"Imported {institutions} institutions and {fields} federal fields of study.")

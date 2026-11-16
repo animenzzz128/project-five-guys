@@ -70,10 +70,36 @@ admissions openings.
 
 Specific degrees are maintained separately in the same Program table, with
 no federal credential level. The three catalog entries in
-`core/data/cs_programs.csv` link to the Yale and Cornell CS catalogs. To add an
-official URL for a federal row, edit its Catalog URL in Django Admin. When no
+`core/data/cs_programs.csv` link to the Yale and Cornell CS catalogs. The bundled federal-field links are applied during the same import. To supply or
+correct an official URL, edit its Catalog URL in Django Admin. When no
 program URL has been verified, the public page labels the school homepage as
 **College website**. School homepage URLs are never guessed to be program URLs.
 
 Rebuild the compact CSV extracts from those two official ZIP downloads with
 `python scripts/prepare_scorecard.py INSTITUTION.zip FIELD_OF_STUDY.zip core/data/scorecard_2026`.
+
+### Verified official program links
+
+The November 16, 2026 snapshot adds 336 matched federal rows at 27 schools from
+30 configured campus directories. With the three independently verified BA/BS
+entries there are 339 linked records across 28 schools, 338 distinct URLs, and
+67,656 blank program URLs. These counts exclude homepage fallbacks.
+
+To refresh, install `requirements-dev.txt` and run
+`python scripts/collect_program_links.py /tmp/catalog_links.csv`. Review the diff
+before replacing `core/data/scorecard_2026/catalog_links.csv`, particularly removals
+if a catalog is temporarily unavailable. Add supported campus indexes, their UNITIDs,
+and program-list selectors in `core/data/catalog_directories.csv`.
+
+The collector reads public, same-host HTTPS pages, observes robots exclusions,
+and checks both the official undergraduate index and the destination title.
+It accepts only one matching field and one unambiguous program URL per campus
+and normalized name. Separate BA/BS URLs for one federal field are ambiguous.
+A missing or blocked directory produces no matches. Sites outside the configured
+directories have not been scanned. Snapshot import uses the school, four-digit CIP
+and credential level; no external requests are made by the application.
+
+After schema migration, `python manage.py import_scorecard` includes the links.
+For an existing nationwide catalog, `python manage.py apply_catalog_links`
+refreshes only the URLs. Removed automatic matches are cleared and curator edits
+are preserved.
