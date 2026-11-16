@@ -41,3 +41,39 @@ Rules: work on a branch, PR says `Closes #<issue>`, a teammate reviews before
 merge, each app makes its own migrations.
 
 Deployment: see [DEPLOY.md](DEPLOY.md).
+
+## Undergraduate program catalog
+
+After `python manage.py migrate`, run `python manage.py import_scorecard` in the
+target environment to load the bundled nationwide snapshot. Open `/programs/` and
+search by school or field. The catalog import runs explicitly, independently of
+the demo seed; a fresh deployment needs the import once. Reruns upsert schools
+on UNITID and federal fields on school, four-digit CIP and credential level.
+Existing school IDs, student shortlists, and manually maintained catalog links
+on federal rows survive a repeated import.
+
+The source is the U.S. Department of Education's [College Scorecard](https://collegescorecard.ed.gov/data/).
+The institution release is [November 2, 2026](https://ed-public-download.scorecard.network/downloads/Most-Recent-Cohorts-Institution_11022026.zip);
+the Field of Study release is [October 15, 2026](https://ed-public-download.scorecard.network/downloads/Most-Recent-Cohorts-Field-of-Study_10152026.zip).
+These are release dates; measurements in the most-recent cohorts files can come from different years.
+Redistributed extracts are attributed to the Department of Education; see the
+[dataset metadata and license](https://catalog.data.gov/dataset/college-scorecard).
+
+Scope: currently operating schools in the 50 states, DC and US territories with
+a reported bachelor's field, a bachelor's offering flag or a highest/predominant
+bachelor's award. Includes 2,462 schools and 67,992 federal fields. Of 70,944
+bachelor's source rows (CREDLEV=3), 1,856 have no numeric UNITID and 1,096 do
+not match an in-scope current institution. Institutions can qualify even when
+the field file has no matching detail. Preserve leading CIP zeros. A federal
+field groups degrees and is not a campus-specific BA/BS or a list of current
+admissions openings.
+
+Specific degrees are maintained separately in the same Program table, with
+no federal credential level. The three catalog entries in
+`core/data/cs_programs.csv` link to the Yale and Cornell CS catalogs. To add an
+official URL for a federal row, edit its Catalog URL in Django Admin. When no
+program URL has been verified, the public page labels the school homepage as
+**College website**. School homepage URLs are never guessed to be program URLs.
+
+Rebuild the compact CSV extracts from those two official ZIP downloads with
+`python scripts/prepare_scorecard.py INSTITUTION.zip FIELD_OF_STUDY.zip core/data/scorecard_2026`.

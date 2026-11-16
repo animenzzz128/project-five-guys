@@ -117,3 +117,34 @@ class ShortlistItem(models.Model):
 
     def __str__(self):
         return f"{self.institution.name} on {self.shortlist.name}"
+
+
+class Program(models.Model):
+    """One named degree program at one institution."""
+
+    institution = models.ForeignKey(Institution, on_delete=models.CASCADE, related_name="programs")
+    name = models.CharField(max_length=200)
+    degree = models.CharField(max_length=80)
+    cip_code = models.CharField(max_length=12, blank=True)
+    summary = models.TextField(blank=True)
+    core_courses = models.TextField(blank=True)
+    entry_requirements = models.TextField(blank=True)
+    capstone = models.TextField(blank=True)
+    catalog_year = models.CharField(max_length=20, blank=True)
+    credential_level = models.PositiveSmallIntegerField(null=True, blank=True)
+    data_release = models.CharField(max_length=20, blank=True)
+    catalog_url = models.URLField(blank=True, max_length=600, help_text="Institution's official program or catalog page.")
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["institution", "cip_code", "credential_level"], name="unique_scorecard_field_per_school"
+            ),
+            models.UniqueConstraint(
+                fields=["institution", "name", "degree"], condition=models.Q(credential_level__isnull=True),
+                name="unique_catalog_degree_per_school",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.institution.name}: {self.name} ({self.degree})"

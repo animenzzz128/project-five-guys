@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Institution, Shortlist, ShortlistItem
+from .models import Institution, Program, Shortlist, ShortlistItem
 
 
 @admin.register(Institution)
@@ -22,3 +22,11 @@ class ShortlistAdmin(admin.ModelAdmin):
     list_display = ("name", "user", "updated_at")
     search_fields = ("name", "user__username")
     inlines = (ShortlistItemInline,)
+
+
+@admin.register(Program)
+class ProgramAdmin(admin.ModelAdmin):
+    list_display = ("name", "degree", "institution", "cip_code", "catalog_year")
+    search_fields = ("name", "institution__name", "cip_code")
+    list_filter = ("degree",)
+    autocomplete_fields = ("institution",)
