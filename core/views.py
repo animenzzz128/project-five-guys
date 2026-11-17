@@ -30,7 +30,7 @@ def healthz(request):
 
 def programs(request):
     """Browse school-specific degree records and federal fields of study."""
-    query = request.GET.get("q", "").strip()
+    query = request.GET.get("q", "").replace("\x00", "").strip()
     results = Program.objects.select_related("institution")
     if query:
         results = results.filter(Q(institution__name__icontains=query) | Q(name__icontains=query))
