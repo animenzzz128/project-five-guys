@@ -33,7 +33,19 @@ BLOCKING_IMPACTS = {"critical", "serious"}
 # has an issue; remove the entry when that issue is fixed. Anything new still
 # fails the build, so the list can only shrink.
 KNOWN_ISSUES = {
-    ("/", "color-contrast"),  # landing page pastel tags and grey text: #29
+    # Landing page pastel tags and grey text, #29. Exact elements only, so a
+    # NEW low-contrast element on "/" still fails. Delete entries as #29 is fixed.
+    ("/", "color-contrast"): {
+        ".feature-full.feature.glass > .feature-copy > .soon",
+        ".feature-wide.feature.glass > .feature-copy > .soon",
+        ".feature.glass:nth-child(2) > .feature-copy > .soon",
+        ".group-head > .tag-community.group-tag",
+        ".group-head > .tag-why.group-tag",
+        ".link-row:nth-child(1) > .tag-why.group-tag",
+        ".link-row:nth-child(2) > .tag-community.group-tag",
+        ".tag-curious",
+        ".well-hint",
+    },
 }
 
 
@@ -121,7 +133,11 @@ class AccessibilityTests(BrowserTestCase):
                 for violation in results.response["violations"]:
                     line = f"{path}: [{violation['impact']}] {violation['id']} - {violation['help']}"
                     print(line)
-                    known = (path, violation["id"]) in KNOWN_ISSUES
-                    if violation["impact"] in BLOCKING_IMPACTS and not known:
+                    allowed = KNOWN_ISSUES.get((path, violation["id"]), set())
+                    targets = {" ".join(node["target"]) for node in violation["nodes"]}
+                    new_targets = sorted(targets - allowed)
+                    print(f"  targets: {sorted(targets)}")
+                    if violation["impact"] in BLOCKING_IMPACTS and new_targets:
+                        line += f" on {new_targets}"
                         failures.append(line)
         self.assertEqual(failures, [], "\n".join(failures))

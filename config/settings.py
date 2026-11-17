@@ -205,10 +205,12 @@ SENTRY_DSN = os.environ.get("SENTRY_DSN", "")
 if SENTRY_DSN:
     import sentry_sdk
 
+    from config.sentry import SENTRY_PRIVACY_OPTIONS
+
     sentry_sdk.init(
         dsn=SENTRY_DSN,
         environment=os.environ.get("SENTRY_ENVIRONMENT", "development"),
         release=os.environ.get("RENDER_GIT_COMMIT"),  # Render sets this per deploy
         traces_sample_rate=float(os.environ.get("SENTRY_TRACES_SAMPLE_RATE", "0.1")),
-        send_default_pii=False,  # never send emails, IPs or cookies
+        **SENTRY_PRIVACY_OPTIONS,
     )
