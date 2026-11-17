@@ -45,6 +45,14 @@ class CollegeSearchTests(TestCase):
         self.assertContains(response, 'q=mich&amp;state=MI&amp;state=NY&amp;page=2')
         self.assertEqual(len(self.ids(q="mich", state=["MI", "NY"], page=2)), 3)
 
+    def test_removing_one_filter_keeps_others_and_resets_pagination(self):
+        from urllib.parse import parse_qs
+
+        response = self.client.get("/colleges/", {"q": "MICH", "state": ["MI", "CA"], "page": 2, "tuition_max": 0})
+        chips = {chip["label"]: parse_qs(chip["query"]) for chip in response.context["form"].active_filters()}
+        self.assertEqual(chips["MI"], {"q": ["MICH"], "state": ["CA"], "tuition_max": ["0"]})
+        self.assertEqual(chips["Tuition ≤ $0"], {"q": ["MICH"], "state": ["MI", "CA"]})
+
     def test_demo_is_labeled_when_only_sample_rows_exist(self):
         Institution.objects.exclude(data_release=Institution.SAMPLE).delete()
         self.assertContains(self.client.get("/colleges/"), "Demo dataset")

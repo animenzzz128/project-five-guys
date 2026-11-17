@@ -1,6 +1,4 @@
 <dl class="college-metrics">
-  <div><dt>State</dt><dd>{{ school.state|default:"Not reported" }}</dd></div>
-  <div><dt>School type</dt><dd>{{ school.get_ownership_display|default:"Not reported" }}</dd></div>
   <div><dt>Undergraduates</dt><dd>{{ school.enrollment_undergrad|floatformat:"0g"|default:"Not reported" }}</dd></div>
   <div><dt>In-state tuition</dt><dd>{% if school.tuition_in_state != None %}${{ school.tuition_in_state|floatformat:"0g" }}{% else %}Not reported{% endif %}</dd></div>
 </dl>
