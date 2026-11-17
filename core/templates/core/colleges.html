@@ -30,9 +30,11 @@
     </header>
     {% for school in page %}
     <article class="college-row">
-      <div class="college-row-head">{% include "core/college_identity.html" %}</div>
+      <div class="college-row-head">
+        {% include "core/college_identity.html" %}
+        {% include "core/shortlist_control.html" with item_id=school.saved_item_id %}
+      </div>
       {% include "core/college_metrics.html" %}
-      {% include "core/shortlist_control.html" with item_id=school.saved_item_id %}
     </article>
     {% empty %}<p class="no-results">No colleges match these filters. <a href="{% url 'colleges' %}">Clear all filters</a></p>{% endfor %}
     {% if page.has_other_pages %}<nav class="college-pager" aria-label="College results">
