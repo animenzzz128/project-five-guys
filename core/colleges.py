@@ -26,6 +26,34 @@ class CollegeFilters(forms.Form):
         return values
 
 
+    def active_filters(self):
+        if not self.is_valid():
+            return []
+        values = self.cleaned_data
+        chips = []
+
+        def add(field, label, value=None):
+            query = self.data.copy()
+            query.pop("page", None)
+            if field == "state":
+                query.setlist(field, [state for state in values[field] if state != value])
+            else:
+                query.pop(field, None)
+            chips.append({"label": label, "query": query.urlencode()})
+
+        if values["q"]:
+            add("q", values["q"])
+        for state in values["state"]:
+            add("state", state, state)
+        if values["ownership"]:
+            add("ownership", Institution.Ownership(values["ownership"]).label)
+        for field, label in (("tuition_max", "Tuition ≤ ${:,}"), ("size_min", "Students ≥ {:,}"),
+                             ("size_max", "Students ≤ {:,}")):
+            if values[field] is not None:
+                add(field, label.format(values[field]))
+        return chips
+
+
 def colleges(request):
     schools = Institution.objects.all()
     # Staging can start with only the demo seed. Once imported, show real schools.
@@ -34,7 +62,7 @@ def colleges(request):
     if not demo:
         schools = real
     states = schools.exclude(state="").order_by("state").values_list("state", flat=True).distinct()
-    form = CollegeFilters(request.GET)
+    form = CollegeFilters(request.GET, label_suffix="")
     form.fields["state"].choices = [(state, state) for state in states]
     if form.is_valid():
         lookups = {"q": "name__icontains", "state": "state__in", "ownership": "ownership",
