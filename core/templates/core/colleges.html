@@ -1,0 +1,32 @@
+{% extends "core/college_base.html" %}
+{% block title %}Find colleges · Admit Compass{% endblock %}
+{% block content %}
+<header class="page-head"><h1>Find colleges</h1></header>
+<div class="college-layout">
+  <form class="college-filters" method="get" action="{% url 'colleges' %}">
+    <h2>Filters</h2>
+    {% for field in form %}
+      {% if field.name == "state" %}
+        <details{% if field.value or field.errors %} open{% endif %}><summary>{{ field.label }}{% if field.value %} ({{ field.value|length }}){% endif %}</summary>{{ field.errors }}{{ field }}</details>
+      {% else %}<div>{{ field.label_tag }}{{ field.errors }}{{ field }}</div>{% endif %}
+    {% endfor %}
+    <button class="key key-primary" type="submit">Apply filters</button>
+    <a href="{% url 'colleges' %}">Clear filters</a>
+  </form>
+  <section class="college-results" aria-labelledby="result-count">
+    <h2 id="result-count">{{ page.paginator.count }} college{{ page.paginator.count|pluralize }}</h2>
+    {% if demo %}<p>Demo dataset</p>{% endif %}
+    {% for school in page %}
+    <article class="college-row">
+      <h3><a href="{% url 'college_detail' school.unitid %}">{{ school.name }}</a></h3>
+      {% include "core/college_metrics.html" %}
+    </article>
+    {% empty %}<p>No colleges match these filters. <a href="{% url 'colleges' %}">Clear all filters</a></p>{% endfor %}
+    {% if page.has_other_pages %}<nav class="college-pager" aria-label="College results">
+      {% if page.has_previous %}<a href="{% querystring page=page.previous_page_number %}">Previous</a>{% endif %}
+      <span>Page {{ page.number }} of {{ page.paginator.num_pages }}</span>
+      {% if page.has_next %}<a href="{% querystring page=page.next_page_number %}">Next</a>{% endif %}
+    </nav>{% endif %}
+  </section>
+</div>
+{% endblock %}

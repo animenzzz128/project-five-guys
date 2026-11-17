@@ -1,0 +1,14 @@
+.college-layout { display: grid; grid-template-columns: minmax(13rem, 17rem) minmax(0, 1fr); gap: clamp(24px, 5vw, 64px); align-items: start; }
+.college-filters { display: grid; gap: 14px; padding: 20px; border: 1px solid var(--separator); border-radius: 16px; background: var(--surface); }
+.college-filters label, .college-filters summary { font-size: .95rem; }
+.college-filters summary { cursor: pointer; }
+.college-filters select, .college-filters input:not([type="checkbox"]) { box-sizing: border-box; display: block; width: 100%; margin-top: 4px; padding: 8px; border: 1px solid var(--separator); border-radius: 8px; color: var(--ink); background: var(--surface); }
+.college-filters #id_state { columns: 3; margin-top: 8px; }
+.college-filters #id_state label { white-space: nowrap; }
+.college-row { padding-block: 20px; border-bottom: 1px solid var(--separator); overflow-wrap: anywhere; }
+.college-row h3 { margin: 0 0 10px; }
+.college-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 8rem), 1fr)); gap: 12px; margin: 12px 0; }
+.college-metrics dt { font-size: .8rem; color: var(--ink-2); }
+.college-metrics dd { margin: 0; }
+.college-pager { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 20px; }
+@media (max-width: 700px) { .college-layout { grid-template-columns: minmax(0, 1fr); } }

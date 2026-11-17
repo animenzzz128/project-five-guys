@@ -37,6 +37,7 @@
           {% if user.is_authenticated %}
             <a href="{% url 'dashboard' %}"{% if request.resolver_match.url_name == "dashboard" %} aria-current="page"{% endif %}>Dashboard</a>
           {% endif %}
+          <a href="{% url 'colleges' %}">Colleges</a>
         {% endblock %}
       </nav>
 
