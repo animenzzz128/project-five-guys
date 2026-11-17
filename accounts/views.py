@@ -91,7 +91,7 @@ DEFAULT_LEDE = "Here's where your college search stands, and what to do next."
 def _journey(school_count):
     """The five steps of the product, each marked done from the user's own data.
 
-    `ready` is False while a step's page has not been built yet; the template
+    A step has a URL when its page exists. Otherwise the template
     then says "Coming soon" instead of linking to a page that does not exist.
     """
     steps = [
@@ -102,8 +102,9 @@ def _journey(school_count):
         {"key": "ask", "title": "Ask the AI", "text": "Questions about your list, with sources.", "done": False},
     ]
     next_step = next((step for step in steps if not step["done"]), None)
+    urls = {"search": reverse("colleges"), "shortlist": reverse("shortlist")}
     for step in steps:
-        step["ready"] = False
+        step["url"] = urls.get(step["key"], "")
         step["is_next"] = step is next_step
     return steps
 
