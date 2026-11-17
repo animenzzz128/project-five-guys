@@ -1,0 +1,10 @@
+{% extends "core/college_base.html" %}
+{% block title %}Remove a college · Admit Compass{% endblock %}
+{% block content %}
+<header class="page-head"><h1>Remove {{ item.institution.name }}?</h1><p>This removes the college from {{ item.shortlist.name }}.</p></header>
+<form method="post" action="{% url 'shortlist_remove' item.pk %}">
+  {% csrf_token %}<input type="hidden" name="next" value="{{ next }}">
+  <button class="key key-primary" type="submit" name="confirm" value="yes">Confirm removal</button>
+  <a href="{{ next }}">Keep college</a>
+</form>
+{% endblock %}

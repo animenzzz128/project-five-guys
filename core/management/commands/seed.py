@@ -137,9 +137,11 @@ class Command(BaseCommand):
         return created, updated
 
     def _seed_demo_shortlist(self, student):
-        shortlist, _ = Shortlist.objects.get_or_create(
+        shortlist, created = Shortlist.objects.get_or_create(
             user=student, name=DEMO_SHORTLIST_NAME
         )
+        if not created:
+            return  # Preserve edits and confirmed removals across deployments.
         for position, (unitid, note) in enumerate(DEMO_SHORTLIST_PICKS):
             institution = Institution.objects.filter(unitid=unitid).first()
             if institution is None:

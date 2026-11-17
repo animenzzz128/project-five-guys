@@ -1,0 +1,5 @@
+<form method="post" action="{% if item_id %}{% url 'shortlist_remove' item_id %}{% else %}{% url 'shortlist_add' school.unitid %}{% endif %}">
+  {% csrf_token %}
+  <input type="hidden" name="next" value="{{ request.get_full_path }}">
+  <button class="key key-sm" type="submit">{% if item_id %}Remove from shortlist{% else %}Add to shortlist{% endif %}</button>
+</form>

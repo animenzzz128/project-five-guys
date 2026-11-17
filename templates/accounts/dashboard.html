@@ -60,7 +60,7 @@
 <div class="dash-grid">
   <section class="dash-card glass dash-shortlist" data-reveal aria-labelledby="shortlist-title">
     <div class="dash-card-head">
-      <h2 id="shortlist-title" class="dash-card-title">Your shortlist</h2>
+      <h2 id="shortlist-title" class="dash-card-title"><a href="{% url 'shortlist' %}">Your shortlist</a></h2>
       <span class="count-pill num">{{ school_count }} school{{ school_count|pluralize }}</span>
     </div>
     {% if recent_items %}
@@ -81,7 +81,7 @@
     {% else %}
       <div class="empty">
         <span class="tile tile-shortlist" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 3.5h10a1 1 0 0 1 1 1v16l-6-3.6-6 3.6v-16a1 1 0 0 1 1-1z" fill="currentColor"/></svg></span>
-        <p><b>No schools yet.</b> Once search opens, save the schools worth a closer look and they'll show up here.</p>
+        <p><b>No schools yet.</b> <a href="{% url 'colleges' %}">Find colleges</a> to add your first school.</p>
       </div>
     {% endif %}
   </section>

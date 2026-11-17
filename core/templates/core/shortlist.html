@@ -1,0 +1,15 @@
+{% extends "core/college_base.html" %}
+{% block title %}Your shortlist · Admit Compass{% endblock %}
+{% block content %}
+<header class="page-head"><h1>Your shortlist</h1><p>{{ items|length }} saved selection{{ items|length|pluralize }}</p></header>
+<a href="{% url 'colleges' %}">Find colleges</a>
+{% for item in items %}
+  {% ifchanged item.shortlist_id %}<h2>{{ item.shortlist.name }}</h2>{% endifchanged %}
+  <article class="college-row">
+    <h3><a href="{% url 'college_detail' item.institution.unitid %}">{{ item.institution.name }}</a></h3>
+    {% if item.note %}<p>{{ item.note }}</p>{% endif %}
+    {% include "core/college_metrics.html" with school=item.institution %}
+    {% include "core/shortlist_control.html" with school=item.institution item_id=item.pk %}
+  </article>
+{% empty %}<p>No colleges saved yet. Add a college from its search result or detail page.</p>{% endfor %}
+{% endblock %}
