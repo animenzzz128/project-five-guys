@@ -60,3 +60,16 @@
 .shortlist-confirm h1 { font-size: clamp(1.6rem, 3vw, 2rem); }
 .shortlist-empty p, .shortlist-confirm p { margin: 10px 0 20px; color: var(--ink-2); }
 .shortlist-confirm form { display: flex; gap: 12px; flex-wrap: wrap; }
+
+/* Find similar (#16) */
+.find-similar { display: inline-block; margin-top: 12px; font-size: .875rem; font-weight: 600; }
+.college-row .find-similar { margin-left: 56px; }
+.similar-head p { max-width: 46rem; margin: 10px 0 0; color: var(--ink-2); }
+.similar-list { list-style: none; margin: 0; padding: 0; }
+.similar-reasons { display: grid; gap: 4px; margin: 12px 0 0 56px; padding: 0; list-style: none; font-size: .875rem; color: var(--ink-2); overflow-wrap: anywhere; }
+.similar-reasons b { color: var(--ink); font-weight: 600; margin-right: 4px; }
+.similar-empty { max-width: 40rem; padding: clamp(18px, 2.6vw, 30px); }
+.similar-empty p { margin: 10px 0 20px; color: var(--ink-2); }
+@media (max-width: 700px) {
+  .college-row .find-similar, .similar-reasons { margin-left: 0; }
+}

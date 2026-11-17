@@ -3,6 +3,7 @@ from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, render
 
 from .models import Institution
+from .similarity import NotComparable, similar_institutions
 from .shortlists import with_saved_item
 
 
@@ -80,3 +81,18 @@ def colleges(request):
 def college_detail(request, unitid):
     school = get_object_or_404(with_saved_item(Institution.objects.all(), request.user), unitid=unitid)
     return render(request, "core/college_detail.html", {"school": school})
+
+
+def similar_colleges(request, unitid):
+    """Up to ten schools like this one, each with two or three plain reasons (#16).  Owner: B."""
+    school = get_object_or_404(with_saved_item(Institution.objects.all(), request.user), unitid=unitid)
+    try:
+        results = similar_institutions(unitid)
+    except NotComparable:
+        results = None
+    if results and request.user.is_authenticated:
+        matches = Institution.objects.filter(pk__in=[result.institution.pk for result in results])
+        saved = dict(with_saved_item(matches, request.user).values_list("pk", "saved_item_id"))
+        for result in results:
+            result.institution.saved_item_id = saved.get(result.institution.pk)
+    return render(request, "core/similar.html", {"school": school, "results": results})

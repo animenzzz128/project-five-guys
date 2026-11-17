@@ -1,0 +1,40 @@
+{% extends "core/college_base.html" %}
+{% block title %}Colleges like {{ school.name }} · Admit Compass{% endblock %}
+{% block content %}
+<a href="{% url 'college_detail' school.unitid %}">← {{ school.name }}</a>
+<header class="catalog-head similar-head">
+  <h1>Colleges like <span class="spectrum">{{ school.name }}</span></h1>
+  <p>Matched on size, cost, admission rate, graduation rate, earnings, school type and region, using {% if school.is_sample %}the demo dataset{% else %}College Scorecard data{% endif %} only. A figure a school doesn't report is left out, never guessed.</p>
+</header>
+{% if results is None %}
+<section class="similar-empty glass">
+  <h2>Not enough data to compare</h2>
+  <p>{{ school.name }} reports fewer than three of the figures we compare (size, cost, admission rate, graduation rate and earnings), so any list would be misleading.</p>
+  <a class="key key-primary" href="{% url 'colleges' %}">Browse all colleges</a>
+</section>
+{% elif not results %}
+<section class="similar-empty glass">
+  <h2>No comparable colleges yet</h2>
+  <p>No other school in this dataset shares enough reported figures with {{ school.name }}.</p>
+  <a class="key key-primary" href="{% url 'colleges' %}">Browse all colleges</a>
+</section>
+{% else %}
+<section class="college-results glass" aria-labelledby="similar-count">
+  <header class="result-head"><h2 id="similar-count">{{ results|length }} similar college{{ results|length|pluralize }}</h2></header>
+  <ol class="similar-list">
+  {% for result in results %}{% with school=result.institution %}
+    <li class="college-row">
+      <div class="college-row-head">
+        {% include "core/college_identity.html" %}
+        {% include "core/shortlist_control.html" with item_id=school.saved_item_id %}
+      </div>
+      <ul class="similar-reasons" aria-label="Why it is similar">
+        {% for reason in result.reasons %}<li><b>{{ reason.label }}</b> {{ reason.detail }}</li>{% endfor %}
+      </ul>
+      {% include "core/find_similar_link.html" %}
+    </li>
+  {% endwith %}{% endfor %}
+  </ol>
+</section>
+{% endif %}
+{% endblock %}
