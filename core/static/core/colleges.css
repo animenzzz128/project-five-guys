@@ -11,7 +11,7 @@
   border: 1px solid var(--separator); border-radius: 12px; font: inherit; color: var(--ink); background: var(--glass-strong);
 }
 .state-picker { padding: 10px 0; border-block: 1px solid var(--separator); }
-.state-picker #id_state { columns: 3; margin-top: 8px; max-height: none; }
+.state-picker #id_state { columns: 3; margin-top: 8px; }
 .state-picker label { white-space: nowrap; font-size: .875rem; }
 .clear-filters { text-align: center; font-size: .9rem; }
 .college-results { padding: 0 clamp(16px, 3vw, 32px); min-width: 0; }
@@ -30,8 +30,8 @@
 .college-identity a { color: var(--ink); }
 .college-identity p { margin: 3px 0 0; color: var(--ink-2); font-size: .86rem; }
 .college-monogram { --tile: linear-gradient(140deg, #4989cd, #19477d); --tile-shadow: #275a91; font: 600 1.15rem Georgia, serif; }
-.college-row:nth-of-type(3n+2) .mono { --tile: linear-gradient(140deg, #ac7580, #754352); --tile-shadow: #754352; }
-.college-row:nth-of-type(3n) .mono { --tile: linear-gradient(140deg, #539e88, #215d54); --tile-shadow: #215d54; }
+.monogram-rose { --tile: linear-gradient(140deg, #ac7580, #754352); --tile-shadow: #754352; }
+.monogram-teal { --tile: linear-gradient(140deg, #539e88, #215d54); --tile-shadow: #215d54; }
 .college-metrics { display: flex; gap: clamp(20px, 4vw, 54px); flex-wrap: wrap; margin: 12px 0 0; }
 .college-row .college-metrics { margin-left: 56px; }
 .college-metrics dt { font-size: .76rem; color: var(--ink-2); }
