@@ -40,6 +40,7 @@ class Institution(models.Model):
     state = models.CharField(max_length=2, blank=True, db_index=True)
     school_url = models.URLField(blank=True)
 
+    region = models.PositiveSmallIntegerField(null=True, blank=True, help_text="College Scorecard REGION code.")
     ownership = models.IntegerField(choices=Ownership.choices, null=True, blank=True)
     predominant_degree = models.IntegerField(choices=PredominantDegree.choices, null=True, blank=True)
 
