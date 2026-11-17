@@ -33,7 +33,7 @@ BLOCKING_IMPACTS = {"critical", "serious"}
 # has an issue; remove the entry when that issue is fixed. Anything new still
 # fails the build, so the list can only shrink.
 KNOWN_ISSUES = {
-    ("/", "color-contrast"),  # landing page pastel tags and grey text: see KNOWN_ISSUES_ISSUE
+    ("/", "color-contrast"),  # landing page pastel tags and grey text: #29
 }
 
 
