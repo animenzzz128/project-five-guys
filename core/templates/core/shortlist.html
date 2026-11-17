@@ -10,7 +10,7 @@
 {% regroup items by shortlist as groups %}
 {% for group in groups %}
 <section class="shortlist-group" aria-labelledby="list-{{ group.grouper.pk }}">
-  <h2 id="list-{{ group.grouper.pk }}">{{ group.grouper.name }}</h2>
+  <h2 id="list-{{ group.grouper.pk }}"{% if groups|length == 1 and group.grouper.name == "My shortlist" %} class="visually-hidden"{% endif %}>{{ group.grouper.name }}</h2>
   <div class="shortlist-grid">
   {% for item in group.list %}
     <article class="saved-college glass">

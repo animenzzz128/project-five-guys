@@ -51,10 +51,8 @@
 .shortlist-head p { margin: 8px 0 0; color: var(--ink-2); }
 .shortlist-group { margin: 30px 0; }
 .shortlist-group h2 { font-size: 1.25rem; margin-bottom: 14px; overflow-wrap: anywhere; }
-.shortlist-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr)); gap: 18px; }
+.shortlist-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr)); gap: 18px; }
 .saved-college, .shortlist-empty, .shortlist-confirm { padding: clamp(18px, 2.6vw, 30px); }
-.saved-college:nth-child(3n+2) .mono { --tile: linear-gradient(140deg, #ac7580, #754352); --tile-shadow: #754352; }
-.saved-college:nth-child(3n) .mono { --tile: linear-gradient(140deg, #539e88, #215d54); --tile-shadow: #215d54; }
 .saved-college .college-metrics { border-top: 1px solid var(--separator); padding-top: 14px; margin-top: 18px; }
 .shortlist-note { margin: 14px 0 0; color: var(--ink-2); font-size: .875rem; overflow-wrap: anywhere; }
 .shortlist-note b { display: block; color: var(--ink); }
