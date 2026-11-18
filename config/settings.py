@@ -211,6 +211,7 @@ if SENTRY_DSN:
         dsn=SENTRY_DSN,
         environment=os.environ.get("SENTRY_ENVIRONMENT", "development"),
         release=os.environ.get("RENDER_GIT_COMMIT"),  # Render sets this per deploy
-        traces_sample_rate=float(os.environ.get("SENTRY_TRACES_SAMPLE_RATE", "0.1")),
+        # Performance tracing is opt-in (0 = errors only); scrubbed either way.
+        traces_sample_rate=float(os.environ.get("SENTRY_TRACES_SAMPLE_RATE", "0")),
         **SENTRY_PRIVACY_OPTIONS,
     )

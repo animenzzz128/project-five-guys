@@ -18,10 +18,6 @@ from playwright.sync_api import sync_playwright
 
 from abtest.models import Click, Impression
 
-# Playwright's sync API runs an event loop; Django refuses ORM calls from a
-# thread that has one unless this is set. Test-only.
-os.environ.setdefault("DJANGO_ALLOW_ASYNC_UNSAFE", "true")
-
 # Pages every visitor can reach without logging in.
 PUBLIC_PAGES = ["/", "/login/", "/signup/", "/fd986fa"]
 
@@ -53,6 +49,11 @@ KNOWN_ISSUES = {
 class BrowserTestCase(StaticLiveServerTestCase):
     @classmethod
     def setUpClass(cls):
+        # Playwright's sync API runs an event loop; Django refuses ORM calls
+        # from a thread that has one unless this is set. Set only while these
+        # browser tests run, so unit tests keep Django's async-safety check.
+        cls._old_async_unsafe = os.environ.get("DJANGO_ALLOW_ASYNC_UNSAFE")
+        os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
         super().setUpClass()
         cls.playwright = sync_playwright().start()
         cls.browser = cls.playwright.chromium.launch()
@@ -62,6 +63,10 @@ class BrowserTestCase(StaticLiveServerTestCase):
         cls.browser.close()
         cls.playwright.stop()
         super().tearDownClass()
+        if cls._old_async_unsafe is None:
+            os.environ.pop("DJANGO_ALLOW_ASYNC_UNSAFE", None)
+        else:
+            os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = cls._old_async_unsafe
 
     def setUp(self):
         # A new context is a new visitor: fresh cookies, fresh session.
@@ -92,9 +97,9 @@ class ABTestFlowTests(BrowserTestCase):
 
         self.page.locator("button#abtest").click()
         self.page.wait_for_load_state()
-        if self.page.locator("button#abtest").count():
-            self.page.locator("button#abtest").click()  # a second click must not count
-            self.page.wait_for_load_state()
+        # The button stays on the page after a click; a second click must not count.
+        self.page.locator("button#abtest").click()
+        self.page.wait_for_load_state()
 
         self.assertEqual(Impression.objects.count(), 1)
         self.assertEqual(Click.objects.count(), 1)
