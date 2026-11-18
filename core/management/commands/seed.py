@@ -28,6 +28,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
 from core.models import Institution, Shortlist, ShortlistItem
+from core.similarity import build_profiles
 
 SAMPLE_DATA = Path(__file__).resolve().parent.parent.parent / "data" / "sample_institutions.json"
 
@@ -83,11 +84,15 @@ class Command(BaseCommand):
         users = self._seed_users()
         created, updated = self._seed_institutions()
         self._seed_demo_shortlist(users["student"])
+        # "Find similar" (#16, owner B) reads precomputed vectors; refresh them here
+        # so every deploy, and every database reset, has them.
+        profiles = build_profiles()
 
         self.stdout.write(
             self.style.SUCCESS(
                 f"Seed complete: {len(users)} accounts, "
-                f"{created} institutions created, {updated} updated."
+                f"{created} institutions created, {updated} updated, "
+                f"{profiles} similarity profiles built."
             )
         )
         self.stdout.write(

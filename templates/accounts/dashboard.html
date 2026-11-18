@@ -44,10 +44,11 @@
           <span class="step-text">{{ step.text }}</span>
           {% if step.done %}
             <span class="status status-done"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 8.4 6.8 11 12 5.4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Done</span>
+          {% elif step.is_next %}
+            {% if step.url %}<a class="status status-next" href="{{ step.url }}">Up next · {{ step.title }}</a>
+            {% else %}<span class="status status-next">Up next · coming soon</span>{% endif %}
           {% elif step.url %}
             <a class="status" href="{{ step.url }}">{{ step.title }}</a>
-          {% elif step.is_next %}
-            <span class="status status-next">Up next · coming soon</span>
           {% else %}
             <span class="status">Coming soon</span>
           {% endif %}

@@ -1,9 +1,10 @@
 {% extends "core/college_base.html" %}
 {% block title %}{{ school.name }} · Admit Compass{% endblock %}
 {% block content %}
-<a href="{% url 'colleges' %}">All colleges</a>
+<a class="back-link" href="{% url 'colleges' %}"><span aria-hidden="true">←</span> All colleges</a>
 <header class="page-head"><h1>{{ school.name }}</h1><p>{{ school.city }}{% if school.city and school.state %}, {% endif %}{{ school.state }} · {{ school.get_ownership_display|default:"School type not reported" }}</p></header>
 {% include "core/college_metrics.html" %}
 {% include "core/shortlist_control.html" with item_id=school.saved_item_id %}
+{% include "core/find_similar_link.html" %}
 <p>Source: {% if school.is_sample %}Demo dataset{% else %}<a href="{{ school.scorecard_url }}">{{ school.data_release }}</a>{% endif %}</p>
 {% endblock %}

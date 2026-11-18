@@ -9,6 +9,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
 from core.models import Institution, Program
+from core.similarity import build_profiles
 
 DATA = Path(__file__).resolve().parents[2] / "data"
 SNAPSHOT = DATA / "scorecard_2026"
@@ -68,4 +69,6 @@ class Command(BaseCommand):
         fields = import_fields(school_ids)
         call_command("apply_catalog_links", stdout=self.stdout)
         call_command("import_programs", str(DATA / "cs_programs.csv"), stdout=self.stdout)
+        profiles = build_profiles()  # "Find similar" vectors (#16)
         self.stdout.write(f"Imported {institutions} institutions and {fields} federal fields of study.")
+        self.stdout.write(f"Built similarity profiles for {profiles} institutions.")

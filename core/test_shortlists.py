@@ -20,6 +20,12 @@ class ShortlistFlowTests(TestCase):
         self.assertEqual(self.client.get("/shortlist/add/100/").status_code, 405)
         self.assertEqual(self.client.get("/shortlist/remove/1/").status_code, 405)
 
+    def test_logged_out_bookmark_links_to_login_instead_of_posting(self):
+        response = self.client.get("/colleges/100/")
+        self.assertContains(response, 'href="/login/?next=/colleges/100/"')
+        self.assertContains(response, "Log in to save")
+        self.assertNotContains(response, 'action="/shortlist/add/100/"')
+
     def test_save_twenty_duplicate_and_confirmed_removal(self):
         self.client.force_login(self.student)
         for n in range(20):

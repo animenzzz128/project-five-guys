@@ -1,3 +1,4 @@
+{% if user.is_authenticated %}
 <form class="bookmark-form{% if item_id %} is-saved{% endif %}" method="post" action="{% if item_id %}{% url 'shortlist_remove' item_id %}{% else %}{% url 'shortlist_add' school.unitid %}{% endif %}">
   {% csrf_token %}
   <input type="hidden" name="next" value="{{ request.get_full_path }}">
@@ -6,3 +7,12 @@
     <span class="visually-hidden">{% if item_id %}Remove from shortlist{% else %}Add to shortlist{% endif %} · {{ school.name }}</span>
   </button>
 </form>
+{% else %}
+{# Logged out: a POST would be lost at the login page, so link to log in instead of pretending to save. #}
+<div class="bookmark-form">
+  <a class="save" href="{% url 'login' %}?next={{ request.get_full_path|urlencode }}" title="Log in to save colleges">
+    <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M7 3.5h10a1 1 0 0 1 1 1v16l-6-3.6-6 3.6v-16a1 1 0 0 1 1-1z"/></svg>
+    <span class="visually-hidden">Log in to save {{ school.name }}</span>
+  </a>
+</div>
+{% endif %}
