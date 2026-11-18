@@ -67,3 +67,16 @@ class CatalogTests(TestCase):
         self.assertContains(response, 'href="https://example.edu/cs/">Official program catalog')
         self.assertContains(response, 'href="https://www.yale.edu/">College website')
         self.assertNotContains(self.client.get("/programs/", {"q": "Physics"}), "Official program catalog")
+
+    def test_program_search_ignores_null_characters(self):
+        biology = Program.objects.create(institution=self.school, name="Biology", degree="BA")
+        history = Program.objects.create(institution=self.school, name="History", degree="BA")
+        for raw, cleaned, expected in (
+            (" Bio\x00logy ", "Biology", [biology]),
+            ("\x00", "", [biology, history]),
+        ):
+            with self.subTest(query=raw):
+                response = self.client.get("/programs/", {"q": raw})
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.context["query"], cleaned)
+                self.assertEqual(list(response.context["page"]), expected)
