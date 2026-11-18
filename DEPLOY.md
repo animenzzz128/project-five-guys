@@ -29,7 +29,8 @@ request after that takes about a minute.
 | `DEBUG` | `False` | `render.yaml` |
 | `WEB_CONCURRENCY` | `2` | `render.yaml` |
 | `ALLOWED_HOSTS`, `CSRF_TRUSTED_ORIGINS` | not needed | Render's own hostname is added automatically from `RENDER_EXTERNAL_HOSTNAME`; set these only for a custom domain |
-| `OPENROUTER_API_KEY` | (Sprint 2) | Render dashboard → Environment |
+| `OPENROUTER_API_KEY` | team's OpenRouter key (secret) | Render dashboard → Environment; without it AI features fall back instead of calling the LLM |
+| `OPENROUTER_MODEL` | optional, e.g. `openai/gpt-4o-mini` (the default) | Render dashboard → Environment |
 
 Python version comes from `.python-version` (3.12).
 
