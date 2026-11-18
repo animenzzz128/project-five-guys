@@ -1,12 +1,13 @@
 # Render Blueprint. In Render: New > Blueprint > pick this repo.
-# Sprint 2 adds a second service (production) with its own database.
+# Production (`noble-shape`, own Neon branch, auto-deploy off) was created in
+# the dashboard in Sprint 2; see DEPLOY.md.
 services:
   - type: web
     name: noble-shape-staging
     runtime: python
     plan: free
     branch: main
-    autoDeployTrigger: commit # Sprint 2: switch to checksPass so only green CI deploys
+    autoDeployTrigger: checksPass # deploy staging only after CI is green
     buildCommand: ./build.sh
     startCommand: gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --log-file -
     healthCheckPath: /healthz
