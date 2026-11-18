@@ -421,5 +421,6 @@ class DashboardTests(TestCase):
     def test_no_link_points_at_a_page_that_does_not_exist_yet(self):
         self.client.force_login(self.make_user())
         response = self.client.get(self.url)
-        for path in ("/colleges/", "/shortlist/", "/profile/preferences/"):
+        self.assertContains(response, 'href="/colleges/"')
+        for path in ("/shortlist/", "/profile/preferences/"):
             self.assertNotContains(response, f'href="{path}')

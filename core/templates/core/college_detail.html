@@ -1,0 +1,8 @@
+{% extends "core/college_base.html" %}
+{% block title %}{{ school.name }} · Admit Compass{% endblock %}
+{% block content %}
+<a href="{% url 'colleges' %}">All colleges</a>
+<header class="page-head"><h1>{{ school.name }}</h1><p>{{ school.city }}{% if school.city and school.state %}, {% endif %}{{ school.state }} · {{ school.get_ownership_display|default:"School type not reported" }}</p></header>
+{% include "core/college_metrics.html" %}
+<p>Source: {% if school.is_sample %}Demo dataset{% else %}<a href="{{ school.scorecard_url }}">{{ school.data_release }}</a>{% endif %}</p>
+{% endblock %}
