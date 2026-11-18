@@ -103,7 +103,20 @@ federal snapshot. Other outcomes distinguish pages with no confirmed match,
 unreachable homepages, ambiguous campus domains, and sites deferred because of
 a long crawl interval.
 
-Install `requirements-dev.txt` to refresh the data. For the configured directories,
+Install `requirements-scripts.txt` to refresh the catalog links. These optional
+dependencies are separate from the app and its Django tests:
+
+```sh
+pip install -r requirements-scripts.txt
+python -m unittest discover -s script_tests -v
+```
+
+The collector tests use local HTML fixtures and mocked requests; they never crawl
+live sites. The separate `Catalog collector tests` workflow runs when scripts,
+collector tests or their dependencies change. The regular Django suite still
+checks snapshot consistency and database imports without the crawler libraries.
+
+For the configured directories,
 run `python scripts/collect_program_links.py /tmp/catalog_links.csv` and review the
 diff against `core/data/scorecard_2026/catalog_links.csv`. Their official indexes
 and selectors are in `core/data/catalog_directories.csv`.
