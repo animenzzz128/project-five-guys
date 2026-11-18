@@ -17,9 +17,24 @@ from django.test import tag
 from playwright.sync_api import sync_playwright
 
 from abtest.models import Click, Impression
+from core.models import Institution
+from core.similarity import build_profiles
 
 # Pages every visitor can reach without logging in.
-PUBLIC_PAGES = ["/", "/login/", "/signup/", "/fd986fa"]
+PUBLIC_PAGES = [
+    "/", "/login/", "/signup/", "/fd986fa",
+    # College search, a college, and "Find similar" (#7, #16). AccessibilityTests
+    # creates the schools these need (see COLLEGES below).
+    "/colleges/", "/colleges/1001/", "/colleges/1001/similar/",
+]
+
+# Small fixture for the college pages: enough reported figures that
+# "Find similar" lists results with reasons instead of the no-data message.
+COLLEGES = [
+    (1001, "Harbor College", 5200, 61000, "0.1100", "0.8900", 79000),
+    (1002, "Ridge College", 5000, 60000, "0.1000", "0.9000", 80000),
+    (1003, "Valley University", 8000, 50000, "0.3000", "0.8000", 70000),
+]
 
 # axe impact levels that fail the build. "moderate" and "minor" are printed
 # but do not fail, so the team can fix them over time.
@@ -129,11 +144,23 @@ class AccessibilityTests(BrowserTestCase):
 
     axe = Axe()
 
+    def setUp(self):
+        super().setUp()
+        for unitid, name, size, cost, admit, completion, earnings in COLLEGES:
+            Institution.objects.create(
+                unitid=unitid, name=name, city="New Haven", state="CT", ownership=2, region=1,
+                data_release="Scorecard e2e", enrollment_undergrad=size, cost_attendance=cost,
+                tuition_in_state=cost - 20000, admission_rate=admit, completion_rate_150=completion,
+                median_earnings_10yr=earnings,
+            )
+        build_profiles()
+
     def test_public_pages_have_no_serious_violations(self):
         failures = []
         for path in PUBLIC_PAGES:
             with self.subTest(path=path):
-                self.page.goto(self.url(path))
+                response = self.page.goto(self.url(path))
+                self.assertTrue(response.ok, f"{path} returned {response.status}")
                 results = self.axe.run(self.page)
                 for violation in results.response["violations"]:
                     line = f"{path}: [{violation['impact']}] {violation['id']} - {violation['help']}"
