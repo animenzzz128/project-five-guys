@@ -67,3 +67,13 @@ class NormalizeTests(SimpleTestCase):
     def test_name_query_is_truncated_to_the_form_limit(self):
         params, _ = normalize({"name_query": "x" * 400}, ALL)
         self.assertEqual(len(params["q"]), 255)
+
+
+class SchemaTests(SimpleTestCase):
+    def test_null_lists_are_valid(self):
+        import jsonschema
+
+        from ai.search import SCHEMA
+
+        jsonschema.validate({"regions": None, "states": None, "unsupported": None, "control": None}, SCHEMA)
+        self.assertEqual(normalize({"regions": None, "states": None, "unsupported": None}, ALL), ({}, []))

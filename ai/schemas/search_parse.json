@@ -5,30 +5,137 @@
   "type": "object",
   "additionalProperties": false,
   "properties": {
-    "name_query": {"type": ["string", "null"], "description": "Part of a college name the student typed, e.g. 'Michigan'."},
-    "regions": {
-      "type": "array",
-      "items": {"enum": ["northeast", "mid_atlantic", "south", "midwest", "southwest", "west", "pacific"]}
+    "name_query": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Part of a college name the student typed, e.g. 'Michigan'."
     },
-    "states": {"type": "array", "items": {"type": "string", "pattern": "^[A-Za-z]{2}$"}},
-    "control": {"enum": ["public", "private", null]},
-    "max_tuition": {"type": ["integer", "null"]},
-    "max_cost": {"type": ["integer", "null"]},
-    "size_min": {"type": ["integer", "null"]},
-    "size_max": {"type": ["integer", "null"]},
-    "min_admit": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
-    "max_admit": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
-    "min_earnings": {"type": ["integer", "null"]},
-    "min_completion": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
-    "similar_to_name": {"type": ["string", "null"]},
-    "sort": {"enum": ["relevance", "cost", "earnings", "admit_rate", "size", null]},
+    "regions": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "enum": [
+          "northeast",
+          "mid_atlantic",
+          "south",
+          "midwest",
+          "southwest",
+          "west",
+          "pacific"
+        ]
+      }
+    },
+    "states": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "string",
+        "pattern": "^[A-Za-z]{2}$"
+      }
+    },
+    "control": {
+      "enum": [
+        "public",
+        "private",
+        null
+      ]
+    },
+    "max_tuition": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "max_cost": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "size_min": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "size_max": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "min_admit": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": 0,
+      "maximum": 1
+    },
+    "max_admit": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": 0,
+      "maximum": 1
+    },
+    "min_earnings": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "min_completion": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": 0,
+      "maximum": 1
+    },
+    "similar_to_name": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "sort": {
+      "enum": [
+        "relevance",
+        "cost",
+        "earnings",
+        "admit_rate",
+        "size",
+        null
+      ]
+    },
     "unsupported": {
-      "type": "array",
+      "type": [
+        "array",
+        "null"
+      ],
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["phrase", "reason"],
-        "properties": {"phrase": {"type": "string"}, "reason": {"type": "string"}}
+        "required": [
+          "phrase",
+          "reason"
+        ],
+        "properties": {
+          "phrase": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          }
+        }
       }
     }
   }
