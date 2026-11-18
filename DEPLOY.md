@@ -80,6 +80,42 @@ enter a correct username..." rather than a 403 (CSRF works).
 
 ## Production (Sprint 2)
 
-Add a second service to `render.yaml` (e.g. `noble-shape`) with its own Neon
-database (a separate Neon project or branch), and decide how to promote
-(manual deploy, or `autoDeployTrigger: checksPass` on a `production` branch).
+| | Staging | Production |
+| --- | --- | --- |
+| URL | https://noble-shape-staging.onrender.com | https://noble-shape.onrender.com |
+| Render service | `noble-shape-staging` (Blueprint, Oregon) | `noble-shape` (created in the dashboard, Ohio) |
+| Neon branch / database | `staging` / `neondb` | `production` / `noble_prod` (no expiry) |
+| Deploys | automatically, after CI passes on `main` | **manually**: Render → `noble-shape` → Manual Deploy |
+
+Production has its own `SECRET_KEY`; the grader passwords (`SEED_*`) are the
+same as staging so the grader notes work on both.
+
+**Promote to production:** check the change on staging, then Manual Deploy →
+"Deploy latest commit" on `noble-shape`. **Roll back:** Deploys → pick the last
+good deploy → Rollback (release `v0.1.0` = Sprint 1 baseline, commit `b8a3c65`).
+Rolling back code does not undo migrations: before a risky migration, create a
+Neon branch from `production` as a restore point.
+
+Before the Sprint 4 A/B bot run, delete our own test impressions and clicks on
+production.
+
+## Tooling
+
+- **CI** (`.github/workflows/ci.yml`): `test` job (ruff, Django checks,
+  migrations check, unit tests) and `e2e + accessibility` job (Playwright +
+  axe-core, `e2e/tests.py`). `main` is protected: both must pass and one
+  teammate must approve before merging.
+- **Dependabot** (`.github/dependabot.yml`): weekly grouped update PRs for pip
+  and GitHub Actions, plus security updates.
+- **CodeQL**: GitHub code scanning (default setup) on every PR.
+- **Sentry**: error tracking, enabled only when `SENTRY_DSN` is set. In Render
+  set `SENTRY_DSN` and `SENTRY_ENVIRONMENT` (`staging` / `production`) on each
+  service.
+
+Run the browser tests locally:
+
+```sh
+pip install -r requirements-dev.txt
+python -m playwright install chromium
+DEBUG=True python manage.py test --tag e2e
+```
