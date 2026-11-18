@@ -1,7 +1,7 @@
 {% extends "core/college_base.html" %}
 {% block title %}Colleges like {{ school.name }} · Admit Compass{% endblock %}
 {% block content %}
-<a href="{% url 'college_detail' school.unitid %}">← {{ school.name }}</a>
+<a class="back-link" href="{% url 'college_detail' school.unitid %}"><span aria-hidden="true">←</span> {{ school.name }}</a>
 <header class="catalog-head similar-head">
   <h1>Colleges like <span class="spectrum">{{ school.name }}</span></h1>
   <p>Matched on size, cost, admission rate, graduation rate, earnings, school type and region, using {% if school.is_sample %}the demo dataset{% else %}College Scorecard data{% endif %} only. A figure a school doesn't report is left out, never guessed.</p>
