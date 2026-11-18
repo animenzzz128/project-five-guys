@@ -1,0 +1,16 @@
+/* One-sentence AI search box above /colleges/ (#38). Owner: C. */
+.ai-search { padding: 20px clamp(16px, 3vw, 28px); margin-bottom: clamp(20px, 3vw, 32px); }
+.ai-search h2 { margin: 0 0 12px; font-size: 1.2rem; }
+.ai-search-row { display: flex; gap: 12px; align-items: stretch; }
+.ai-search textarea {
+  flex: 1; min-width: 0; box-sizing: border-box; min-height: 52px; padding: 10px 14px; resize: vertical;
+  border: 1px solid var(--separator); border-radius: 12px; font: inherit; color: var(--ink); background: var(--glass-strong);
+}
+.ai-search-examples { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 12px 0 0; font-size: .85rem; color: var(--ink-2); }
+.ai-search-examples button {
+  max-width: 100%; padding: 6px 12px; border: 1px solid var(--separator); border-radius: 999px; cursor: pointer;
+  font: inherit; color: var(--tint-ink); background: var(--fill); text-align: left; overflow-wrap: anywhere;
+}
+.ai-search-examples button:hover { background: var(--fill-strong); }
+.ai-search-note { margin: 10px 0 0; font-size: .8rem; color: var(--ink-2); }
+@media (max-width: 520px) { .ai-search-row { flex-direction: column; } }

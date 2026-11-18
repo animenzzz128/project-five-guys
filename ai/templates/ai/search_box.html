@@ -1,0 +1,22 @@
+{% load static %}<link rel="stylesheet" href="{% static 'ai/search.css' %}">
+<section class="ai-search glass" aria-labelledby="ai-search-title">
+  <h2 id="ai-search-title">Describe your ideal college</h2>
+  {% if user.is_authenticated %}
+  <form method="post" action="{% url 'ai_search' %}">
+    {% csrf_token %}
+    <label class="visually-hidden" for="ai-search-text">Your ideal college, in one sentence (English or Chinese)</label>
+    <div class="ai-search-row">
+      <textarea id="ai-search-text" name="text" rows="2" maxlength="300" placeholder="e.g. a mid-sized private school in the northeast where grads earn well">{{ request.session.ai_search_text|default:"" }}</textarea>
+      <button class="key key-primary" type="submit">Search</button>
+    </div>
+    <p class="ai-search-examples">Try:
+      <button type="submit" name="example" value="A small public college in Massachusetts">A small public college in Massachusetts</button>
+      <button type="submit" name="example" value="Big public universities with in-state tuition under $15,000">Big public universities with in-state tuition under $15,000</button>
+      <button type="submit" name="example" value="加州的私立大学，学生人数不要太多">加州的私立大学，学生人数不要太多</button>
+    </p>
+  </form>
+  <p class="ai-search-note">AI only turns your words into the filters below; every result and figure comes from College Scorecard data.</p>
+  {% else %}
+  <p><a href="{% url 'login' %}?next={% url 'colleges' %}">Log in</a> to describe your ideal college in one sentence and let AI set the filters.</p>
+  {% endif %}
+</section>

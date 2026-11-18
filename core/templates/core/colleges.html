@@ -2,6 +2,7 @@
 {% block title %}Find colleges · Admit Compass{% endblock %}
 {% block content %}
 <header class="catalog-head"><h1>Find <span class="spectrum">colleges</span></h1></header>
+{% include "ai/search_box.html" %}
 <div class="college-layout">
   <details class="filter-panel glass" open{% if form.errors %} data-has-errors{% endif %}>
     <summary>Filters</summary>
