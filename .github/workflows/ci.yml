@@ -5,6 +5,10 @@ on:
   push:
     branches: [main]
 
+# Least privilege for the GITHUB_TOKEN (CodeQL: actions/missing-workflow-permissions).
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-latest
