@@ -96,8 +96,9 @@ def complete_json(*, task: str, system: str, user: str, schema: dict, user_obj, 
 
 
 def _with_schema(system, schema):
-    return (f"{system}\n\nRespond with a single JSON object, and nothing else, "
-            f"that matches this JSON Schema:\n{json.dumps(schema)}")
+    return (f"{system}\n\nReply with one JSON object holding your answer, and nothing else. "
+            f"Do not repeat the schema itself. The object must be valid against this JSON Schema:\n"
+            f"{json.dumps(schema)}")
 
 
 def _send(payload, *, api_key, timeout):
