@@ -11,14 +11,16 @@ How it works
    `present` bitmask records which features were really reported.
 2. `similar_institutions()` asks Postgres for the nearest `CANDIDATE_POOL`
    vectors by L2 distance (pgvector's `<->`), then re-ranks that pool in Python
-   using ONLY the features both schools report.  A missing value is left out,
+   using ONLY the features both schools report.  The pgvector distance still
+   sees the 0 placeholders, so it is only a pre-filter: the pool is kept large
+   enough that the final top 10 almost always matches an exhaustive scan.  A missing value is left out,
    never treated as 0 or as the average.  Distance is the root-mean-square gap
    over the shared features, so a pair is not rewarded for sharing fewer of them.
 3. Reasons come from the shared features with the smallest gaps, shown with the
    real figures for both schools.
 
 On SQLite (local dev without Postgres) step 2 ranks every profile in Python,
-which gives the same order on small data.
+i.e. the exhaustive scan.
 """
 
 import math
@@ -49,7 +51,10 @@ DIMENSIONS = len(NUMERIC) + len(OWNERSHIP_CODES) + len(REGION_CODES)  # 18
 ONE_HOT = 1 / math.sqrt(2)  # a category mismatch then costs exactly 1.0 of L2 distance
 
 MIN_NUMERIC = 3  # a school (and each pair) needs at least 3 shared numeric features
-CANDIDATE_POOL = 200  # nearest vectors fetched from pgvector before exact re-ranking
+# Nearest vectors fetched from pgvector before exact re-ranking.  On the November
+# 2026 snapshot (2,321 comparable schools), 150 random lookups vs an exhaustive
+# scan: pool 200 -> 22 top-10 lists differ, 500 -> 5, 1000 -> 1 (about 26 ms).
+CANDIDATE_POOL = 1000
 CLOSE_GAP = 0.5  # a feature counts as "similar" within half a standard deviation
 CATEGORY_GAP = 0.3  # where a matching category sorts among the numeric reasons
 MAX_REASONS, MIN_REASONS = 3, 2

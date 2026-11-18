@@ -53,12 +53,15 @@ involved.
    inputs gets no profile and its page explains there is not enough data
    (141 of 2,462 schools in the November 2026 snapshot).
 3. `similar_institutions(unitid, k=10, exclude_ids=..., filters=Q(...))` asks
-   Postgres for the 200 nearest vectors by L2 distance (`<->`), then re-ranks
+   Postgres for the 1,000 nearest vectors by L2 distance (`<->`), then re-ranks
    them exactly: the root-mean-square gap over the shared inputs, skipping
    pairs that share fewer than three numeric inputs. Reasons are the shared
    inputs with the smallest gaps (within half a standard deviation where
    possible). Demo rows and federal rows are normalized and compared separately.
-   On SQLite (local dev) the same re-ranking runs over every profile.
+   On SQLite (local dev) the same re-ranking runs over every profile. Because
+   the pgvector distance still sees the placeholders for missing values, the
+   pool is deliberately large: in 150 random lookups it matched an exhaustive
+   scan 149 times (a pool of 200 matched only 128).
 4. The function is the shared engine for the AI shortlist check-up, which
    passes `exclude_ids` and `filters`.
 
