@@ -15,6 +15,7 @@ federal data, not LLM memory"):
 
 from django.conf import settings
 from django.db import models
+from pgvector.django import VectorField
 
 
 class Institution(models.Model):
@@ -40,6 +41,7 @@ class Institution(models.Model):
     state = models.CharField(max_length=2, blank=True, db_index=True)
     school_url = models.URLField(blank=True)
 
+    region = models.PositiveSmallIntegerField(null=True, blank=True, help_text="College Scorecard REGION code.")
     ownership = models.IntegerField(choices=Ownership.choices, null=True, blank=True)
     predominant_degree = models.IntegerField(choices=PredominantDegree.choices, null=True, blank=True)
 
@@ -117,3 +119,56 @@ class ShortlistItem(models.Model):
 
     def __str__(self):
         return f"{self.institution.name} on {self.shortlist.name}"
+
+
+class Program(models.Model):
+    """One named degree program at one institution."""
+
+    institution = models.ForeignKey(Institution, on_delete=models.CASCADE, related_name="programs")
+    name = models.CharField(max_length=200)
+    degree = models.CharField(max_length=80)
+    cip_code = models.CharField(max_length=12, blank=True)
+    summary = models.TextField(blank=True)
+    core_courses = models.TextField(blank=True)
+    entry_requirements = models.TextField(blank=True)
+    capstone = models.TextField(blank=True)
+    catalog_year = models.CharField(max_length=20, blank=True)
+    credential_level = models.PositiveSmallIntegerField(null=True, blank=True)
+    data_release = models.CharField(max_length=20, blank=True)
+    last_collected_url = models.URLField(blank=True, max_length=600, editable=False)
+    catalog_url = models.URLField(blank=True, max_length=600, help_text="Institution's official program or catalog page.")
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["institution", "cip_code", "credential_level"], name="unique_scorecard_field_per_school"
+            ),
+            models.UniqueConstraint(
+                fields=["institution", "name", "degree"], condition=models.Q(credential_level__isnull=True),
+                name="unique_catalog_degree_per_school",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.institution.name}: {self.name} ({self.degree})"
+
+
+class SimilarityProfile(models.Model):
+    """Precomputed feature vector for "Find similar" (#16).  Owner: B.
+
+    Built by `core.similarity.build_profiles()` from seed/import, never per
+    request.  `vector` holds z-scored numeric features plus one-hot categories;
+    a missing value is stored as 0 there only so pgvector can index it, and
+    `present` (a bitmask over `core.similarity.FEATURES`) records which values
+    were actually reported, so ranking and reasons ignore the placeholders.
+    """
+
+    institution = models.OneToOneField(
+        Institution, on_delete=models.CASCADE, primary_key=True, related_name="similarity_profile"
+    )
+    vector = VectorField(dimensions=18)
+    present = models.PositiveSmallIntegerField()
+    computed_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Similarity profile for {self.institution}"

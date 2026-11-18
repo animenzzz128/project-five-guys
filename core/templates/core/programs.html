@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+<section>
+  <h1>Undergraduate programs</h1>
+  <form method="get">
+    <label for="program-search">College or field of study</label>
+    <input id="program-search" name="q" value="{{ query }}" type="search">
+    <button type="submit">Search</button>
+  </form>
+  <p>The federal records group bachelor's degrees by field. College catalog records identify specific degrees.</p>
+  <ul>
+    {% for program in page %}
+      <li>
+        <strong>{{ program.institution.name }}</strong> · {{ program.name }} · {{ program.degree }}
+        {% if program.catalog_url %}
+          <a href="{{ program.catalog_url }}">Official program catalog</a>
+        {% elif program.institution.school_url %}
+          <a href="{{ program.institution.school_url }}">College website</a>
+        {% endif %}
+      </li>
+    {% empty %}
+      <li>No matching programs.</li>
+    {% endfor %}
+  </ul>
+  {% if page.has_other_pages %}
+    <nav aria-label="Program search pages">
+      {% if page.has_previous %}<a href="?q={{ query|urlencode }}&amp;page={{ page.previous_page_number }}">Previous</a>{% endif %}
+      Page {{ page.number }} of {{ page.paginator.num_pages }}
+      {% if page.has_next %}<a href="?q={{ query|urlencode }}&amp;page={{ page.next_page_number }}">Next</a>{% endif %}
+    </nav>
+  {% endif %}
+</section>
+{% endblock %}
