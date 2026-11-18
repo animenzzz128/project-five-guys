@@ -1,0 +1,5 @@
+<span class="mono college-monogram{% if school.unitid|divisibleby:'5' %} monogram-teal{% elif not school.unitid|divisibleby:'3' %} monogram-rose{% endif %}" aria-hidden="true">{{ school.name|first }}</span>
+<div class="college-identity">
+  <h3><a href="{% url 'college_detail' school.unitid %}">{{ school.name }}</a></h3>
+  <p>{% if school.city %}{{ school.city }}, {% endif %}{{ school.state|default:"State not reported" }} · {{ school.get_ownership_display|default:"School type not reported" }}</p>
+</div>
