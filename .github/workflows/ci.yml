@@ -28,8 +28,8 @@ jobs:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/noble_shape
       SECURE_SSL_REDIRECT: "False"
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version-file: .python-version
           cache: pip
@@ -63,8 +63,8 @@ jobs:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/noble_shape
       SECURE_SSL_REDIRECT: "False"
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version-file: .python-version
           cache: pip
