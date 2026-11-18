@@ -39,6 +39,7 @@
             <a href="{% url 'dashboard' %}"{% if request.resolver_match.url_name == "dashboard" %} aria-current="page"{% endif %}>Dashboard</a>
           {% endif %}
           <a href="{% url 'colleges' %}"{% if request.resolver_match.url_name == "colleges" or request.resolver_match.url_name == "college_detail" %} aria-current="page"{% endif %}>Colleges</a>
+          {% if user.is_authenticated %}<a href="{% url 'shortlist' %}"{% if request.resolver_match.url_name == "shortlist" %} aria-current="page"{% endif %}>Shortlist</a>{% endif %}
         {% endblock %}
       </nav>
 

@@ -422,5 +422,5 @@ class DashboardTests(TestCase):
         self.client.force_login(self.make_user())
         response = self.client.get(self.url)
         self.assertContains(response, 'href="/colleges/"')
-        for path in ("/shortlist/", "/profile/preferences/"):
-            self.assertNotContains(response, f'href="{path}')
+        self.assertContains(response, 'href="/shortlist/"')
+        self.assertNotContains(response, 'href="/profile/preferences/')

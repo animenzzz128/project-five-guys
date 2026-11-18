@@ -3,6 +3,7 @@ from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, render
 
 from .models import Institution
+from .shortlists import with_saved_item
 
 
 class CollegeFilters(forms.Form):
@@ -71,10 +72,11 @@ def colleges(request):
                                     if form.cleaned_data[key] not in (None, "", [])})
     else:
         schools = schools.none()
+    schools = with_saved_item(schools, request.user)
     page = Paginator(schools.order_by("name", "unitid"), 25).get_page(request.GET.get("page"))
     return render(request, "core/colleges.html", {"form": form, "page": page, "demo": demo})
 
 
 def college_detail(request, unitid):
-    school = get_object_or_404(Institution, unitid=unitid)
+    school = get_object_or_404(with_saved_item(Institution.objects.all(), request.user), unitid=unitid)
     return render(request, "core/college_detail.html", {"school": school})

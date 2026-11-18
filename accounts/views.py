@@ -102,8 +102,9 @@ def _journey(school_count):
         {"key": "ask", "title": "Ask the AI", "text": "Questions about your list, with sources.", "done": False},
     ]
     next_step = next((step for step in steps if not step["done"]), None)
+    urls = {"search": reverse("colleges"), "shortlist": reverse("shortlist")}
     for step in steps:
-        step["url"] = reverse("colleges") if step["key"] == "search" else ""
+        step["url"] = urls.get(step["key"], "")
         step["is_next"] = step is next_step
     return steps
 
