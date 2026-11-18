@@ -15,7 +15,7 @@ from zipfile import ZipFile
 STATES = set("AL AK AZ AR CA CO CT DE FL GA HI ID IL IN IA KS KY LA ME MD MA MI MN MS MO MT NE NV NH NJ NM NY NC ND "
              "OH OK OR PA RI SC SD TN TX UT VT VA WA WV WI WY DC AS GU MP PR VI".split())
 SCHOOL_FIELDS = {
-    "name": "INSTNM", "city": "CITY", "state": "STABBR", "ownership": "CONTROL",
+    "name": "INSTNM", "city": "CITY", "state": "STABBR", "region": "REGION", "ownership": "CONTROL",
     "predominant_degree": "PREDDEG", "enrollment_undergrad": "UGDS", "admission_rate": "ADM_RATE",
     "sat_average": "SAT_AVG", "tuition_in_state": "TUITIONFEE_IN", "tuition_out_of_state": "TUITIONFEE_OUT",
     "median_earnings_10yr": "MD_EARN_WNE_P10", "median_debt": "GRAD_DEBT_MDN",
