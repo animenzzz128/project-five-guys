@@ -99,13 +99,15 @@ output is reviewed and committed, never fetched at deploy time.
 `/programs/` searches the catalog and links to the official program page when
 one is verified, otherwise to the college homepage, labelled differently.
 
-**Status.** The import runs locally in about 7 seconds. Staging and production
-still run the 10-school demo seed; loading the snapshot there is
+**Status.** The snapshot is loaded on staging and production (the import takes
+about 7 seconds locally). Documenting how it is loaded on Render, removing stale
+rows on re-import and `/programs/` search speed are
 [#47](https://github.com/animenzzz128/project-five-guys/issues/47) (Sprint 3).
 
-**See it.** Locally: `python manage.py import_scorecard`, then `/colleges/`
-shows "College Scorecard" with 2,462 schools and `/programs/?q=nursing` lists
-federal fields.
+**See it.** On staging or production, `/colleges/` shows "College Scorecard"
+with 2,462 schools, `/colleges/?major=computer%20science` keeps the 826 that
+offer a computer science bachelor's field, and `/programs/?q=nursing` lists
+federal fields with official catalog links.
 
 ### Data notes: the inputs to "Find similar"
 
@@ -250,9 +252,9 @@ with "AI search is unavailable right now"; daily limit (Package 2) → "You've
 used today's AI searches", text kept. Never a 500.
 
 **How to see it.** Log in, open **Colleges**, type a sentence or click an
-example. With only the demo seed loaded there are ten schools; run
-`python manage.py import_scorecard` for the 2,462-school snapshot and its
-67,992 federal fields of study.
+example. Staging and production have the full 2,462-school snapshot and its
+67,992 federal fields of study; a fresh local database has only the demo seed
+until `python manage.py import_scorecard` is run.
 
 **Tests** (`ai/tests.py`, `ai/test_search.py`, `ai/test_views.py`,
 `core/test_ranking.py`, `core/test_ai_filters.py`). The LLM is always mocked:
