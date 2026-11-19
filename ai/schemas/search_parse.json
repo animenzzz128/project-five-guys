@@ -1,0 +1,193 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "search_parse",
+  "description": "Intent, hard requirements (must), soft preferences (prefer) and majors from one sentence describing a student's ideal college.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "intent": {
+      "enum": [
+        "search",
+        "similar",
+        "name_lookup",
+        "out_of_scope",
+        null
+      ]
+    },
+    "must": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "regions": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "enum": [
+              "northeast",
+              "mid_atlantic",
+              "south",
+              "midwest",
+              "southwest",
+              "west",
+              "pacific"
+            ]
+          }
+        },
+        "states": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z]{2}$"
+          }
+        },
+        "control": {
+          "enum": [
+            "public",
+            "private",
+            null
+          ]
+        },
+        "max_tuition": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "max_cost": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "size_min": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "size_max": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "min_admit": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1
+        },
+        "max_admit": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1
+        },
+        "min_earnings": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "min_completion": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "prefer": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "factor"
+        ],
+        "properties": {
+          "factor": {
+            "enum": [
+              "low_cost",
+              "low_tuition",
+              "high_earnings",
+              "high_completion",
+              "high_retention",
+              "low_debt",
+              "selective",
+              "accessible",
+              "small",
+              "large"
+            ]
+          },
+          "weight": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "majors": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "string"
+      }
+    },
+    "name_query": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "similar_to_name": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "unsupported": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "phrase",
+          "reason"
+        ],
+        "properties": {
+          "phrase": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

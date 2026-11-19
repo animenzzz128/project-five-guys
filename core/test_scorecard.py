@@ -25,11 +25,13 @@ class CatalogTests(TestCase):
 
         def records(filename):
             if filename == "institutions.csv.gz":
-                return iter([{"unitid": "130794", "name": "Yale University"}])
+                return iter([{"unitid": "130794", "name": "Yale University", "region": "1"}])
             return iter([field.copy()])
 
         with patch.object(import_scorecard, "records", side_effect=records):
             import_scorecard.import_institutions()
+            self.school.refresh_from_db()
+            self.assertEqual(self.school.region, 1)
             ids = {self.school.unitid: self.school.pk}
             import_scorecard.import_fields(ids)
             federal = Program.objects.get(credential_level=3)
