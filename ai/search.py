@@ -1,41 +1,44 @@
 """One-sentence college search (#38).  Owner: C.
 
-Intent recognition, then retrieval. The LLM reads the student's sentence once
-and returns structured intent (`schemas/search_parse.json`): hard requirements
-(`must`), soft preferences (`prefer`), majors, a school to compare with, and
-the wishes no field can express. Everything after that is plain server code:
-`normalize` checks and clamps the reply and maps it onto the `/colleges/`
-query parameters, so every result and every figure comes from our database.
+Intent recognition, then hybrid retrieval. The LLM reads the student's
+sentence once and returns structured intent (`schemas/search_parse.json`):
+hard requirements (`must`), soft preferences (`prefer`), majors, a school to
+compare with, and the wishes no field can express. Everything after that is
+plain server code, so every result and every figure comes from our database:
 
-This first version maps the hard requirements the list already filters by:
-name, state, school type, in-state tuition and size. Everything else the
-model understood is shown to the student as a note, never guessed into a
-filter.
+- `normalize` checks and clamps the reply and maps it onto `/colleges/` query
+  parameters: must -> filters, prefer -> `prefer=<factor>:<weight>`, majors ->
+  `major=<keyword>` (only if our federal program data has such a field),
+  "colleges like X" -> `similar_to=<unitid>` (only on exactly one name match;
+  the LLM never supplies a UNITID). Regions become states through the fixed
+  table in `regions.py`.
+- `/colleges/` then filters on the hard requirements and ranks what is left by
+  the preferences (`core/ranking.py`).
 """
 
 import json
 from pathlib import Path
 
 from core.models import Institution
+from core.ranking import FACTORS, MAX_WEIGHT, match_majors, prefer_param
 
 from .client import complete_json
+from .regions import REGIONS
 
 SCHEMA = json.loads((Path(__file__).parent / "schemas" / "search_parse.json").read_text())
 MAX_TEXT = 300
 MAX_NAME = 255  # CollegeFilters.q max_length
 MAX_TUITION = 100_000
+MAX_COST = 150_000
+MAX_EARNINGS = 500_000
 MAX_SIZE = 500_000
+MAX_MAJORS = 3
 
 US_STATES = frozenset(
     "AL AK AZ AR CA CO CT DE DC FL GA HI ID IL IN IA KS KY LA ME MD MA MI MN MS MO MT NE NV NH NJ NM NY "
     "NC ND OH OK OR PA RI SC SD TN TX UT VT VA WA WV WI WY".split()
 )
 OWNERSHIP = {"public": Institution.Ownership.PUBLIC, "private": Institution.Ownership.PRIVATE_NONPROFIT}
-NOT_YET = "Not available as a filter yet"
-LATER_MUST = {
-    "regions": "region", "max_cost": "total cost of attendance", "min_admit": "minimum admission rate",
-    "max_admit": "maximum admission rate", "min_earnings": "graduate earnings", "min_completion": "graduation rate",
-}
 
 SYSTEM_PROMPT = """You read one sentence from a prospective U.S. undergraduate student describing the college they
 want, and return their intent as structured search parameters. The sentence may be in English or Chinese. You never
@@ -78,22 +81,45 @@ def parse_sentence(text, user):
     return complete_json(task="search_parse", system=SYSTEM_PROMPT, user=text, schema=SCHEMA, user_obj=user)
 
 
-def available_states():
-    """States that actually have colleges in the list `/colleges/` shows (real data, else the demo seed)."""
+def _shown_schools():
+    """The rows `/colleges/` lists: real federal data once imported, else the demo seed."""
     schools = Institution.objects.exclude(data_release=Institution.SAMPLE)
-    if not schools.exists():
-        schools = Institution.objects.all()
-    return set(schools.exclude(state="").values_list("state", flat=True).distinct())
+    return schools if schools.exists() else Institution.objects.all()
+
+
+def available_states():
+    """States that actually have colleges in the list `/colleges/` shows."""
+    return set(_shown_schools().exclude(state="").values_list("state", flat=True).distinct())
+
+
+def find_school(name):
+    """UNITIDs of the listed colleges whose name matches `name`, ignoring case (at most two)."""
+    return list(_shown_schools().filter(name__iexact=name.strip()).values_list("unitid", flat=True)[:2])
 
 
 def _whole(value, high):
     return None if value is None else str(min(max(int(value), 0), high))
 
 
-def normalize(raw, states_with_colleges):
+def _fraction(value):
+    return None if value is None else format(round(min(max(float(value), 0.0), 1.0), 4), "g")
+
+
+def _range(params, notes, must, low_key, high_key, convert, label):
+    """Copy a min/max pair; when min > max neither is applied and the student is told."""
+    low, high = convert(must.get(low_key)), convert(must.get(high_key))
+    if low is not None and high is not None and float(low) > float(high):
+        notes.append({"phrase": f"{label} {low}–{high}", "reason": f"Minimum {label} is above the maximum"})
+        return
+    for value, key in ((low, low_key), (high, high_key)):
+        if value is not None:
+            params[key] = value
+
+
+def normalize(raw, states_with_colleges, find_school=find_school, find_majors=match_majors):
     """Map a validated search_parse reply to `/colleges/` params plus notes for what was not applied.
 
-    Returns (params, notes): params is {name: str | list[str]} in the list's names (#7); notes is
+    Returns (params, notes): params is {name: str | list[str]} in the list's own names; notes is
     [{"phrase", "reason"}] for the student to see. No value is guessed or defaulted here.
     """
     must = raw.get("must") or {}
@@ -104,8 +130,10 @@ def normalize(raw, states_with_colleges):
         params["q"] = name
 
     states = []
-    for code in must.get("states") or []:
-        code = code.upper()
+    asked = [code.upper() for code in must.get("states") or []]
+    for region in must.get("regions") or []:
+        asked += [code for code in REGIONS[region] if code in states_with_colleges]
+    for code in asked:
         if code not in US_STATES or code in states:
             continue
         if code in states_with_colleges:
@@ -118,30 +146,45 @@ def normalize(raw, states_with_colleges):
     if must.get("control") in OWNERSHIP:
         params["ownership"] = str(OWNERSHIP[must["control"]].value)
 
-    tuition = _whole(must.get("max_tuition"), MAX_TUITION)
-    if tuition is not None:
-        params["tuition_max"] = tuition
+    for key, param, high in (("max_tuition", "tuition_max", MAX_TUITION), ("max_cost", "max_cost", MAX_COST),
+                             ("min_earnings", "min_earnings", MAX_EARNINGS)):
+        value = _whole(must.get(key), high)
+        if value is not None:
+            params[param] = value
+    _range(params, notes, must, "size_min", "size_max", lambda v: _whole(v, MAX_SIZE), "size")
+    _range(params, notes, must, "min_admit", "max_admit", _fraction, "admission rate")
+    completion = _fraction(must.get("min_completion"))
+    if completion is not None:
+        params["min_completion"] = completion
 
-    low, high = _whole(must.get("size_min"), MAX_SIZE), _whole(must.get("size_max"), MAX_SIZE)
-    if low is not None and high is not None and int(low) > int(high):
-        notes.append({"phrase": f"{low}–{high} students", "reason": "Minimum size is above maximum size"})
-    else:
-        if low is not None:
-            params["size_min"] = low
-        if high is not None:
-            params["size_max"] = high
-
-    for field, label in LATER_MUST.items():
-        value = must.get(field)
-        if value not in (None, [], ""):
-            shown = ", ".join(value) if isinstance(value, list) else value
-            notes.append({"phrase": f"{label}: {shown}", "reason": NOT_YET})
+    weights = {}
     for wish in raw.get("prefer") or []:
-        notes.append({"phrase": f"preference: {wish['factor'].replace('_', ' ')}", "reason": NOT_YET})
-    for major in raw.get("majors") or []:
-        notes.append({"phrase": f"major: {major}", "reason": NOT_YET})
-    if (raw.get("similar_to_name") or "").strip():
-        notes.append({"phrase": f"like {raw['similar_to_name'].strip()}", "reason": NOT_YET})
+        if wish["factor"] in FACTORS:
+            weight = min(max(int(wish.get("weight") or 1), 1), MAX_WEIGHT)
+            weights[wish["factor"]] = max(weights.get(wish["factor"], 0), weight)
+    if weights:
+        params["prefer"] = [prefer_param(factor, weight) for factor, weight in weights.items()]
+
+    majors = []
+    for keyword in raw.get("majors") or []:
+        keyword = " ".join(keyword.split()).lower()[:60]
+        if not keyword or keyword in majors or len(majors) == MAX_MAJORS:
+            continue
+        if find_majors(keyword):
+            majors.append(keyword)
+        else:
+            notes.append({"phrase": f"major: {keyword}", "reason": "No bachelor's program by that name in our data"})
+    if majors:
+        params["major"] = majors
+
+    similar = (raw.get("similar_to_name") or "").strip()
+    if similar:
+        matches = find_school(similar)
+        if len(matches) == 1:
+            params["similar_to"] = str(matches[0])
+        else:
+            reason = "No college by that name in our data" if not matches else "Several colleges have that name"
+            notes.append({"phrase": f"like {similar}", "reason": reason})
 
     for wish in raw.get("unsupported") or []:
         notes.append({"phrase": wish["phrase"], "reason": wish["reason"]})
