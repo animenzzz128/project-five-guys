@@ -1,4 +1,113 @@
-# Similar colleges data
+# Technical challenge and testing
+
+Admit Compass is a Django 5.2 app on PostgreSQL (Neon) deployed to Render, with
+separate staging and production services and databases (`DEPLOY.md`). This file
+lists each technical-challenge item we built, where its code lives, the pull
+requests that delivered it and how to see it working, then our testing strategy.
+
+| # | Item (course category) | Main pull requests | See it |
+| --- | --- | --- | --- |
+| 1 | CI: tests and linting on every pull request, merge blocked on failure (Delivery) | [#30](https://github.com/animenzzz128/project-five-guys/pull/30) | the checks on any pull request |
+| 2 | CD: `main` deploys staging automatically, production is promoted deliberately (Delivery) | [#30](https://github.com/animenzzz128/project-five-guys/pull/30) | Render dashboard, `DEPLOY.md` |
+| 3 | End-to-end browser tests (Playwright) and accessibility checks in CI (Frontend and quality) | [#30](https://github.com/animenzzz128/project-five-guys/pull/30) | the `e2e + accessibility` check |
+| 4 | Error tracking (Sentry) and a health-check endpoint (Delivery) | [#30](https://github.com/animenzzz128/project-five-guys/pull/30) | `/healthz` |
+| 5 | Importing external data: the College Scorecard snapshot and program catalog (Backend) | [#24](https://github.com/animenzzz128/project-five-guys/pull/24), [#28](https://github.com/animenzzz128/project-five-guys/pull/28) | `/programs/`, `/colleges/` |
+| 6 | Retrieval over our own data with pgvector: "Find similar" (AI) | [#32](https://github.com/animenzzz128/project-five-guys/pull/32) | any college → **Find similar** |
+| 7 | Structured LLM output that drives app behavior: one-sentence search (AI) | [#39](https://github.com/animenzzz128/project-five-guys/pull/39), [#45](https://github.com/animenzzz128/project-five-guys/pull/45), [#46](https://github.com/animenzzz128/project-five-guys/pull/46) | `/colleges/` while logged in |
+
+Planned: an evaluation set run like tests ([#44](https://github.com/animenzzz128/project-five-guys/issues/44))
+and per-user AI usage limits ([#49](https://github.com/animenzzz128/project-five-guys/issues/49)).
+
+## 1. CI: every pull request is tested and linted
+
+**What it is.** `.github/workflows/ci.yml` runs on every pull request and on
+every push to `main`, against a real PostgreSQL 16 service with the `vector`
+extension (`pgvector/pgvector:pg16`), with `DEBUG=False` like production. The
+`test` job runs `ruff check .`, `manage.py check --deploy --fail-level ERROR`,
+`makemigrations --check --dry-run` and the unit and integration tests; the
+`e2e + accessibility` job is described in item 3. `main` is protected: both
+jobs must pass and a teammate must approve before a pull request can merge.
+GitHub CodeQL scans every pull request, and Dependabot (`.github/dependabot.yml`)
+opens weekly grouped update pull requests for pip and GitHub Actions, which go
+through the same checks. `.github/workflows/catalog-scripts.yml` tests the
+offline catalog collectors separately (item 5).
+
+**See it.** Any pull request's **Checks** tab; a red check disables **Merge**.
+
+## 2. CD: staging follows `main`, production is promoted on purpose
+
+**What it is.** `render.yaml` defines the staging service with
+`autoDeployTrigger: checksPass`: after CI passes on `main`, Render builds and
+deploys staging. `build.sh` installs dependencies, collects static files,
+applies migrations and runs `seed` (idempotent: grader accounts and demo data).
+Production (`noble-shape`) is a separate Render service with its own Neon
+database branch and is deployed only by **Manual Deploy**, after the change has
+been checked on staging; rollback is Render's **Rollback** to an earlier deploy
+(the Sprint 1 baseline is release `v0.1.0`). Configuration and secrets are
+environment variables only (`.env.example`, `DEPLOY.md`); gunicorn binds to
+`$PORT` and logs go to stdout.
+
+**See it.** Merge to `main` and watch staging redeploy once CI is green; the
+promote and rollback steps are in `DEPLOY.md` → "Production".
+
+## 3. End-to-end browser tests and accessibility checks in CI
+
+**What it is.** `e2e/tests.py` starts a live Django server and drives headless
+Chromium with Playwright (tag `e2e`, run in its own CI job). Browser flows: the
+A/B page keeps a visitor's variant and counts a click once; two visitors count
+two impressions; no horizontal scroll at phone width. Accessibility: every
+public page (home, login, sign-up, A/B page, `/colleges/`, a college, "Find
+similar") is checked with axe-core; any **critical** or **serious** violation
+fails the build. Known existing problems are listed by exact page, rule and
+element in `KNOWN_ISSUES` with an issue each ([#29](https://github.com/animenzzz128/project-five-guys/issues/29)),
+so the list can only shrink and anything new still fails.
+
+**See it.** The `e2e + accessibility` check on any pull request; locally
+`python -m playwright install chromium` then `DEBUG=True python manage.py test --tag e2e`.
+
+## 4. Error tracking and health check
+
+**What it is.** `/healthz` (`core/views.py`) runs `SELECT 1` and returns
+`{"status": "ok", "database": "postgresql"}`, or HTTP 503 when the database is
+unreachable; Render uses it as the service health check, and it is exempt from
+the HTTPS redirect because Render probes over plain HTTP. Sentry
+(`config/settings.py`, `config/sentry.py`) is on only when `SENTRY_DSN` is set,
+so laptops, CI and tests never send events; it is turned on per Render service
+by setting `SENTRY_DSN` and `SENTRY_ENVIRONMENT` (`staging` / `production`). Every event, performance transaction and
+breadcrumb goes through `scrub_event` / `scrub_breadcrumb`, which drop request
+bodies, query strings, headers, cookies and frame variables and replace
+anything that looks like an email with `[email]`.
+
+**See it.** https://noble-shape-staging.onrender.com/healthz; errors appear in
+the team's Sentry project tagged with the environment.
+
+## 5. Importing external data: College Scorecard and the program catalog
+
+**What it is.** The app's schools and fields of study come from the U.S.
+Department of Education's College Scorecard, not from an LLM. A pinned snapshot
+is committed in `core/data/scorecard_2026/` (2,462 bachelor's-granting
+institutions and 67,992 federal fields of study), prepared by
+`scripts/prepare_scorecard.py`. `python manage.py import_scorecard` loads it in
+one transaction: institutions upserted by federal UNITID, fields of study keyed
+by school + four-digit CIP code + credential level, then
+`apply_catalog_links` (reviewed official catalog links, applied without network
+requests and without overwriting links an editor changed), `import_programs`
+(specific BA/BS degree records) and `build_profiles()` for item 6. Missing
+federal values import as NULL, never 0. `scripts/collect_program_links.py` and
+`scripts/scan_school_catalogs.py` discover official catalog links offline; their
+output is reviewed and committed, never fetched at deploy time.
+`/programs/` searches the catalog and links to the official program page when
+one is verified, otherwise to the college homepage, labelled differently.
+
+**Status.** The import runs locally in about 7 seconds. Staging and production
+still run the 10-school demo seed; loading the snapshot there is
+[#47](https://github.com/animenzzz128/project-five-guys/issues/47) (Sprint 3).
+
+**See it.** Locally: `python manage.py import_scorecard`, then `/colleges/`
+shows "College Scorecard" with 2,462 schools and `/programs/?q=nursing` lists
+federal fields.
+
+### Data notes: the inputs to "Find similar"
 
 The nationwide import joins institutions by federal UNITID. The November 2026
 institution snapshot contains 2,462 schools. These are the seven inputs for
@@ -29,7 +138,7 @@ features, persist vectors during import, handle missing features, and return up
 to ten schools with reasons based on the data. The deployment owner coordinates
 the vector extension on CI and both Neon environments.
 
-## Find similar colleges (#16): retrieval over our own data with pgvector
+## 6. Find similar colleges (#16): retrieval over our own data with pgvector
 
 **What it is.** `/colleges/<unitid>/similar/` lists up to ten schools most like
 the one you picked, each with two or three plain reasons that show both
@@ -80,7 +189,7 @@ never listed, the too-little-data message, `k`/`exclude_ids`/`filters`, demo and
 federal rows kept apart, idempotent rebuilds, links from rows and detail pages,
 and seed building profiles.
 
-## One-sentence college search (#38): structured LLM output drives app behavior
+## 7. One-sentence college search (#38): structured LLM output drives app behavior
 
 **What it is.** Above the `/colleges/` list a logged-in student types one
 sentence, in English or Chinese ("a mid-sized private school in the northeast
@@ -159,3 +268,41 @@ too-long input, both fallbacks, the limit, logged-out redirect, another user's
 `interp`, chip removal, pagination of ranked results, relax suggestions). Not
 tested automatically: the real model's choices; that is what the evaluation
 set (Sprint 4, `manage.py ai_eval search_parse`) is for.
+
+## Testing strategy
+
+**Levels.** About 240 automated tests run in CI on every pull request.
+
+| Level | What it covers | Where |
+| --- | --- | --- |
+| Unit | Pure logic with no web request: search normalization and the LLM client, preference ranking and percentiles, similarity vectors and reasons, Sentry scrubbing | `ai/tests.py`, `ai/test_search.py`, `core/test_ranking.py`, `core/test_similarity.py`, `config/tests.py` |
+| Integration (Django test client + database) | Views, forms, permissions and data rules end to end inside Django: sign-up/log-in, dashboard, A/B counting and `/stats`, filters, shortlist ownership and confirmation, imports and re-imports, the AI search view and its fallbacks | `accounts/tests.py`, `abtest/tests.py`, `core/tests.py`, `core/test_colleges.py`, `core/test_shortlists.py`, `core/test_scorecard.py`, `core/test_catalog_links.py`, `core/test_ai_filters.py`, `ai/test_views.py` |
+| End to end (real browser) | Flows that need a browser and accessibility (item 3) | `e2e/tests.py` |
+| Offline script tests | Catalog collectors on small inline HTML samples, network calls mocked | `script_tests/` (own workflow) |
+
+CI runs the integration tests against PostgreSQL with pgvector, the same engine
+as production; locally they can also run on SQLite.
+
+**What we mock.**
+- **The LLM.** Tests never call OpenRouter. `ai.testing.fake_ai([...])` replaces
+  the client's single network function with scripted replies (dicts, raw text or
+  exceptions); client tests patch `requests.post` to simulate timeouts, HTTP
+  errors, errors inside a 200 response and malformed replies. A view test also
+  clears `OPENROUTER_API_KEY` and asserts no request is made, so a developer's
+  local key can never be used by the suite.
+- **Sentry.** Off in tests (no DSN); `config/tests.py` captures what the SDK
+  would send through an in-memory transport and checks each channel.
+- **External websites.** Catalog collectors are tested on inline HTML samples with
+  their network calls mocked; the
+  Scorecard data is a committed snapshot, so no test downloads anything.
+
+**What we don't test automatically, and why.**
+- **The real model's judgement** (whether a sentence is understood well). It is
+  non-deterministic and costs money; it is measured instead by an evaluation set
+  run on demand ([#44](https://github.com/animenzzz128/project-five-guys/issues/44)).
+- **The deployment itself.** Render builds are checked by `/healthz` and a manual
+  smoke test on staging before production is promoted.
+- **Visual design** beyond axe and the phone-width check: reviewed by eye on
+  staging.
+- **Performance with the full dataset on Render.** Tracked with the data load in
+  [#47](https://github.com/animenzzz128/project-five-guys/issues/47).
