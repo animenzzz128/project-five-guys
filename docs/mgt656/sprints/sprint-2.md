@@ -40,24 +40,29 @@ search — intent recognition and hybrid ranking — are on `main`.
 
 Staging: https://noble-shape-staging.onrender.com · Production: https://noble-shape.onrender.com
 
+Everything below is merged to `main` with green CI. Staging deploys from `main`
+automatically once checks pass (`autoDeployTrigger: checksPass`); production is
+promoted by manual deploy, so it sits on the commit we chose rather than on
+every merge.
+
 - [x] Sprint 1 surface still live: accounts, landing page, dashboard,
       `/healthz`, and the A/B page at `/fd986fa` with `/fd986fa/stats`.
 - [x] `/colleges/` search and filter, the private shortlist, and "find similar"
-      are on `main` and auto-deploy to staging once CI is green
-      (`autoDeployTrigger: checksPass`).
-- [x] One-sentence search is reachable; structured LLM output drives the query,
-      with the existing filters as the fallback path.
-- [x] CI on every PR: ruff, Django checks, unit tests, Playwright end-to-end
-      tests and accessibility checks. CodeQL scanning on every PR.
-- [x] Sentry error tracking wired for both environments.
-- [x] The full College Scorecard snapshot (2,462 schools, 67,992 fields of study)
-      loads on every deploy ([#52](https://github.com/animenzzz128/project-five-guys/pull/52)),
-      so search, the major filter, the program catalog and "find similar" run on
-      real data on staging and production. Remaining clean-up (stale rows on
-      re-import, `/programs/` search speed) is
-      [#47](https://github.com/animenzzz128/project-five-guys/issues/47).
-      Production is promoted by manual deploy, so it is pinned to the commit we
-      chose rather than to every merge.
+      over pgvector.
+- [x] One-sentence search: structured LLM output drives the query, with the
+      existing filters as the fallback path.
+- [x] The full College Scorecard snapshot (2,462 schools, 67,992 fields of
+      study) loads on every deploy
+      ([#52](https://github.com/animenzzz128/project-five-guys/pull/52)), so
+      search, the major filter, the program catalog and "find similar" run on
+      real data on both staging and production.
+- [x] CI on every pull request: ruff, Django checks, unit tests, Playwright
+      end-to-end tests and accessibility checks, plus CodeQL scanning.
+- [x] Sentry is wired into both environments and activates where `SENTRY_DSN`
+      is set in Render.
+- [ ] Data clean-up is still open
+      ([#47](https://github.com/animenzzz128/project-five-guys/issues/47)):
+      stale rows on re-import and `/programs/` search speed.
 
 ## Working with our agents
 
@@ -89,15 +94,16 @@ govern, where the engineer and the reviewer actually read them.
   [#44](https://github.com/animenzzz128/project-five-guys/issues/44) (run the
   one-sentence-search evaluation set like tests), which finishes #38.
 - **Opened during the sprint and queued:**
-  [#47](https://github.com/animenzzz128/project-five-guys/issues/47) (load the
-  Scorecard snapshot on both environments),
+  [#47](https://github.com/animenzzz128/project-five-guys/issues/47) (Scorecard
+  data clean-up: stale rows on re-import, `/programs/` search speed),
   [#49](https://github.com/animenzzz128/project-five-guys/issues/49) (per-user
   daily AI usage limits),
   [#50](https://github.com/animenzzz128/project-five-guys/issues/50) (the #32
   review defects), and
   [#29](https://github.com/animenzzz128/project-five-guys/issues/29)
   (landing-page colour-contrast failures, found by the new accessibility CI).
-  #47 and #49 go first: one blocks honest demos, the other caps AI spend.
+  #49 and #50 go first: one caps AI spend, the other fixes defects already on
+  `main`.
 - **Process change:** every Sprint 2 feature merged on the final day. We will
   review and merge daily in Sprint 3 so the sprint report describes a week of
   work rather than an evening of it.
