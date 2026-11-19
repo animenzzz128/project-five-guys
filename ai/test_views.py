@@ -104,6 +104,13 @@ class AskViewTests(TestCase):
             response = self.ask(text="Michigan")
         self.assertEqual(query(response), ("/colleges/", {"q": ["Michigan"]}))
 
+    def test_non_finite_numbers_fall_back_instead_of_500(self):
+        with fake_ai(['{"must": {"min_admit": NaN}}', '{"must": {"min_admit": NaN}}']):
+            response = self.client.post(URL, {"text": "Michigan"}, follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "AI search is unavailable right now")
+        self.assertFalse(SearchInterpretation.objects.exists())
+
     def test_missing_key_falls_back_without_a_500(self):
         with mock.patch.dict(os.environ, {"OPENROUTER_API_KEY": ""}), mock.patch("requests.post") as post:
             response = self.client.post(URL, {"text": "Michigan"}, follow=True)

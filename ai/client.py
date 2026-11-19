@@ -14,6 +14,7 @@ Tests never reach the network: wrap them in `ai.testing.fake_ai`.
 
 import json
 import logging
+import math
 import os
 import time
 
@@ -131,6 +132,22 @@ def _send(payload, *, api_key, timeout):
     return content
 
 
+class _NonFinite(Exception):
+    pass
+
+
+def _reject_constant(name):
+    """json.loads accepts NaN / Infinity / -Infinity by default; JSON itself does not, nor can we store them."""
+    raise _NonFinite(name)
+
+
+def _finite_float(text):
+    value = float(text)
+    if not math.isfinite(value):  # e.g. 1e999 overflows to inf
+        raise _NonFinite(text)
+    return value
+
+
 def _parse(content, schema):
     """Reply text -> validated dict, or AIBadOutput. Every parser failure maps to AIBadOutput."""
     if len(content) > MAX_REPLY_CHARS:
@@ -139,7 +156,9 @@ def _parse(content, schema):
     if text.startswith("```"):  # some models wrap JSON in a Markdown fence
         text = text.strip("`").removeprefix("json").strip()
     try:
-        data = json.loads(text)
+        data = json.loads(text, parse_constant=_reject_constant, parse_float=_finite_float)
+    except _NonFinite as error:
+        raise AIBadOutput(f"non-finite number in reply ({error})") from error
     except json.JSONDecodeError as error:
         raise AIBadOutput(f"not valid JSON ({error.msg})") from error
     except (ValueError, RecursionError) as error:  # e.g. a 4,400-digit integer, or nesting too deep
