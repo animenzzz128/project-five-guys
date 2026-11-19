@@ -128,6 +128,85 @@ class CompleteJsonTests(SimpleTestCase):
         self.assertIn("outcome=unavailable", logs.output[1])
 
 
+VALID = '{"city": "Boston", "size": 1}'
+HUGE_INT = '{"city": "Boston", "size": ' + "9" * 4400 + "}"
+DEEP = "[" * 60000 + "]" * 60000  # json.loads raises RecursionError at this depth
+
+
+def http_body(body, status=200):
+    response = mock.Mock(status_code=status)
+    response.json.return_value = body
+    return response
+
+
+class ProviderErrorTests(SimpleTestCase):
+    """OpenRouter can report a failure inside an HTTP 200 reply (PR #39 review)."""
+
+    def assert_unavailable(self, body):
+        with mock.patch.dict(os.environ, {"OPENROUTER_API_KEY": SECRET}), \
+                mock.patch("requests.post", return_value=http_body(body)), \
+                self.assertLogs("ai.client", level="INFO") as logs:
+            with self.assertRaises(AIUnavailable):
+                ask()
+        self.assertIn("outcome=unavailable", logs.output[-1])
+
+    def test_choice_error_with_valid_content_is_unavailable(self):
+        self.assert_unavailable({"choices": [{"message": {"content": VALID}, "finish_reason": "stop",
+                                              "error": {"code": 502, "message": "provider down"}}]})
+
+    def test_finish_reason_error_with_valid_content_is_unavailable(self):
+        self.assert_unavailable({"choices": [{"message": {"content": VALID}, "finish_reason": "error"}]})
+
+    def test_top_level_error_in_a_200_is_unavailable(self):
+        self.assert_unavailable({"error": {"code": 429, "message": "rate limited"},
+                                 "choices": [{"message": {"content": VALID}}]})
+
+    def test_normal_finish_reasons_still_succeed(self):
+        for reason in ("stop", None):
+            with mock.patch.dict(os.environ, {"OPENROUTER_API_KEY": SECRET}), mock.patch(
+                    "requests.post", return_value=http_body({"choices": [{"message": {"content": VALID},
+                                                                          "finish_reason": reason}]})):
+                self.assertEqual(ask(), {"city": "Boston", "size": 1})
+
+
+class ParserLimitTests(SimpleTestCase):
+    """Replies beyond the JSON parser's limits are bad output, never a stray exception (PR #39 review)."""
+
+    def test_huge_integer_then_valid_retries_and_succeeds(self):
+        with fake_ai([HUGE_INT, VALID]) as calls:
+            self.assertEqual(ask(), {"city": "Boston", "size": 1})
+        self.assertEqual(calls.call_count, 2)
+
+    def test_huge_integer_twice_is_bad_output(self):
+        with fake_ai([HUGE_INT, HUGE_INT]):
+            with self.assertRaises(AIBadOutput):
+                ask()
+
+    def test_deep_nesting_then_valid_retries_and_succeeds(self):
+        with fake_ai([DEEP, VALID]) as calls:
+            self.assertEqual(ask(), {"city": "Boston", "size": 1})
+        self.assertEqual(calls.call_count, 2)
+
+    def test_deep_nesting_twice_is_bad_output(self):
+        with fake_ai([DEEP, DEEP]):
+            with self.assertRaises(AIBadOutput):
+                ask()
+
+    def test_recursion_error_maps_to_bad_output_even_without_the_length_cap(self):
+        with mock.patch.object(client, "MAX_REPLY_CHARS", 10 ** 9), fake_ai([DEEP, VALID]) as calls:
+            self.assertEqual(ask(), {"city": "Boston", "size": 1})
+        self.assertEqual(calls.call_count, 2)
+        with mock.patch.object(client, "MAX_REPLY_CHARS", 10 ** 9), fake_ai([DEEP, DEEP]):
+            with self.assertRaises(AIBadOutput):
+                ask()
+
+    def test_overlong_reply_is_bad_output_without_parsing(self):
+        with fake_ai(["x" * (client.MAX_REPLY_CHARS + 1), VALID]), mock.patch("json.loads",
+                                                                              wraps=__import__("json").loads) as loads:
+            self.assertEqual(ask(), {"city": "Boston", "size": 1})
+        self.assertEqual(loads.call_count, 1)  # only the valid reply was parsed
+
+
 class FakeAiTests(SimpleTestCase):
     def test_raises_exceptions_in_order(self):
         with fake_ai([AIUnavailable("down")]):

@@ -26,6 +26,7 @@ logger = logging.getLogger(__name__)
 
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 DEFAULT_MODEL = "openai/gpt-4o-mini"
+MAX_REPLY_CHARS = 20_000  # far above any real reply; bounds parsing work and memory
 
 
 class AIUnavailable(Exception):
@@ -113,8 +114,17 @@ def _send(payload, *, api_key, timeout):
     if not 200 <= response.status_code < 300:
         raise AIUnavailable(f"OpenRouter returned HTTP {response.status_code}")
     try:
-        content = response.json()["choices"][0]["message"]["content"]
+        body = response.json()
+        choice = body["choices"][0] if isinstance(body, dict) and "error" not in body else None
     except (ValueError, KeyError, IndexError, TypeError) as error:
+        raise AIUnavailable("OpenRouter reply had an unexpected shape") from error
+    # OpenRouter can report a failure inside an HTTP 200: a top-level or choice-level
+    # "error", or finish_reason "error". Never treat such a reply as an answer.
+    if choice is None or not isinstance(choice, dict) or choice.get("error") or choice.get("finish_reason") == "error":
+        raise AIUnavailable("OpenRouter reported an error in its reply")
+    try:
+        content = choice["message"]["content"]
+    except (KeyError, TypeError) as error:
         raise AIUnavailable("OpenRouter reply had an unexpected shape") from error
     if not isinstance(content, str):
         raise AIUnavailable("OpenRouter reply had no text content")
@@ -122,6 +132,9 @@ def _send(payload, *, api_key, timeout):
 
 
 def _parse(content, schema):
+    """Reply text -> validated dict, or AIBadOutput. Every parser failure maps to AIBadOutput."""
+    if len(content) > MAX_REPLY_CHARS:
+        raise AIBadOutput(f"reply too long ({len(content)} characters)")
     text = content.strip()
     if text.startswith("```"):  # some models wrap JSON in a Markdown fence
         text = text.strip("`").removeprefix("json").strip()
@@ -129,9 +142,13 @@ def _parse(content, schema):
         data = json.loads(text)
     except json.JSONDecodeError as error:
         raise AIBadOutput(f"not valid JSON ({error.msg})") from error
+    except (ValueError, RecursionError) as error:  # e.g. a 4,400-digit integer, or nesting too deep
+        raise AIBadOutput(f"JSON beyond parser limits ({type(error).__name__})") from error
     try:
         jsonschema.validate(data, schema)
     except jsonschema.ValidationError as error:
         where = "/".join(str(part) for part in error.absolute_path) or "(root)"
         raise AIBadOutput(f"schema mismatch at {where}: {error.message}") from error
+    except RecursionError as error:
+        raise AIBadOutput("JSON nested too deeply to validate") from error
     return data
