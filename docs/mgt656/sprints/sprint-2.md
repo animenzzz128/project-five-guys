@@ -50,9 +50,13 @@ Staging: https://noble-shape-staging.onrender.com · Production: https://noble-s
 - [x] CI on every PR: ruff, Django checks, unit tests, Playwright end-to-end
       tests and accessibility checks. CodeQL scanning on every PR.
 - [x] Sentry error tracking wired for both environments.
-- [ ] Loading the full federal Scorecard snapshot on staging and production is
-      still open ([#47](https://github.com/animenzzz128/project-five-guys/issues/47));
-      production is promoted by manual deploy, so it is pinned to the commit we
+- [x] The full College Scorecard snapshot (2,462 schools, 67,992 fields of study)
+      loads on every deploy ([#52](https://github.com/animenzzz128/project-five-guys/pull/52)),
+      so search, the major filter, the program catalog and "find similar" run on
+      real data on staging and production. Remaining clean-up (stale rows on
+      re-import, `/programs/` search speed) is
+      [#47](https://github.com/animenzzz128/project-five-guys/issues/47).
+      Production is promoted by manual deploy, so it is pinned to the commit we
       chose rather than to every merge.
 
 ## Working with our agents
