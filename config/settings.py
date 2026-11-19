@@ -71,6 +71,7 @@ INSTALLED_APPS = [
     "accounts",  # B: sign up / log in / log out, page shell
     "abtest",  # C: A/B test page /fd986fa and /fd986fa/stats
     "core",  # D: domain models + seed command; A: /healthz
+    "ai",  # C: OpenRouter client shared by every AI feature
 ]
 
 MIDDLEWARE = [
