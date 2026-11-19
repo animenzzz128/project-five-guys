@@ -79,3 +79,83 @@ a missing value that is left out rather than treated as zero, the source school
 never listed, the too-little-data message, `k`/`exclude_ids`/`filters`, demo and
 federal rows kept apart, idempotent rebuilds, links from rows and detail pages,
 and seed building profiles.
+
+## One-sentence college search (#38): structured LLM output drives app behavior
+
+**What it is.** Above the `/colleges/` list a logged-in student types one
+sentence, in English or Chinese ("a mid-sized private school in the northeast
+under $60k a year where grads earn well", "想学计算机，加州的公立大学，便宜点").
+The app recognizes the intent with one LLM call, then searches our own data:
+hard requirements filter the list, soft preferences rank it, each result says
+why it matches, and anything we cannot search for is listed under **Can't
+filter by**. The LLM never names a school or a number the student sees.
+
+**How it works: intent recognition, then hybrid retrieval.**
+
+1. **Client.** `ai/client.py: complete_json()` (#37, PR #39) is the one place
+   the app calls an LLM: OpenRouter, server-side only, key and model from
+   `OPENROUTER_API_KEY` / `OPENROUTER_MODEL`, JSON output at temperature 0,
+   validated with `jsonschema`, one retry with the validation error, then
+   `AIUnavailable` / `AIBadOutput` / `AILimitReached`. Logs task, model,
+   latency and outcome, never the key.
+2. **Intent** (`ai/schemas/search_parse.json`, prompt in `ai/search.py`):
+   `intent` (search, similar, name_lookup, out_of_scope); `must` = hard
+   requirements (places, public/private, explicit limits such as "under $40k");
+   `prefer` = soft preferences from a fixed list of ten factors with weight 1-3
+   ("cheap" → `low_cost`, "grads earn well" → `high_earnings`, "most of all" →
+   weight 3); `majors` in plain English; `similar_to_name`; `unsupported`.
+3. **Server-side rules** (`ai/search.py: normalize()`): regions become states
+   through the fixed table in `ai/regions.py`; unknown states and states with
+   no colleges in our data are dropped; numbers are clamped; a minimum above
+   its maximum drops both with a note; a major is kept only if our federal
+   program data has a bachelor's field by that name; "colleges like X" becomes
+   `similar_to=<unitid>` only on exactly one case-insensitive name match. The
+   LLM never supplies a UNITID or a CIP code. The result is saved as
+   `ai.SearchInterpretation` and the student lands on
+   `/colleges/?<params>&interp=<id>`; out-of-scope sentences don't search.
+4. **Recall** (`core/colleges.py: _candidates()`): the must filters (#7's
+   `q, state, ownership, tuition_max, size_min, size_max` plus `max_cost,
+   min/max_admit, min_earnings, min_completion`), `major` (schools offering any
+   matching federal bachelor's field, `core/ranking.py: match_majors()`) and
+   `similar_to` (#16's `similar_institutions`), combined with AND. A school
+   that doesn't report a figure never matches a filter on it.
+5. **Ranking** (`core/ranking.py: rank()`, default whenever preferences exist,
+   `sort=match`): for each factor a school scores its percentile among the
+   candidates that report that figure; its match is the weighted mean over the
+   factors it reports, times `0.5 + 0.5 × coverage`, so a missing figure is
+   never treated as 0 and a school with little data can't win on the one
+   figure it reports. Similarity to "X" joins as one more signal. Ties break by
+   name. Each row shows its two strongest reasons built from our figures
+   ("Cost $26,000 · lower than 100% of matches"). Re-ranking is left for later;
+   it would take `rank()`'s output as input.
+6. **When nothing matches**, the page offers the hard requirements whose
+   removal alone would bring results back, with counts.
+7. **Display.** Chips labelled **AI understood:** — solid for requirements,
+   dashed "Prefers: …" for preferences; each removes only itself. The search
+   box shows the sentence and **Can't filter by**. `{% ai_interpretation %}`
+   (`ai/templatetags/ai_search.py`) reads `interp` only when it belongs to the
+   viewer, so a shared link never shows someone else's sentence.
+
+**Failure handling.** LLM unavailable or invalid twice → a plain name search
+with "AI search is unavailable right now"; daily limit (Package 2) → "You've
+used today's AI searches", text kept. Never a 500.
+
+**How to see it.** Log in, open **Colleges**, type a sentence or click an
+example. With only the demo seed loaded there are ten schools; run
+`python manage.py import_scorecard` for the 2,462-school snapshot and its
+67,992 federal fields of study.
+
+**Tests** (`ai/tests.py`, `ai/test_search.py`, `ai/test_views.py`,
+`core/test_ranking.py`, `core/test_ai_filters.py`). The LLM is always mocked:
+`ai.testing.fake_ai([...])` replaces the single network call with scripted
+replies (dicts, raw strings or exceptions), so CI never calls OpenRouter and
+needs no key. Covered: the client (success, missing key, timeout, non-2xx,
+retry, invalid twice, key never logged); normalization (must/prefer split,
+regions, invalid states, clamping, min > max, majors found / not found,
+`similar_to_name` found / not found / ambiguous); ranking (factor direction,
+missing data, weights, coverage, ties, reasons); the view (acceptance
+sentence, "cheap" ranks instead of excluding, majors, out-of-scope, empty and
+too-long input, both fallbacks, the limit, logged-out redirect, another user's
+`interp`, chip removal, pagination of ranked results, relax suggestions). Not
+tested automatically: the real model's choices; that is what the evaluation
+set (Sprint 4, `manage.py ai_eval search_parse`) is for.
