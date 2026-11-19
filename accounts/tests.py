@@ -390,6 +390,26 @@ class DashboardTests(TestCase):
         self.assertContains(response, "Up next · coming soon", count=1)
         self.assertContains(response, "No schools yet.")
 
+    def test_next_step_with_a_page_keeps_the_up_next_marker(self):
+        from unittest.mock import patch
+
+        from accounts import views as account_views
+
+        real_journey = account_views._journey
+
+        def search_is_next(count):
+            steps = real_journey(count)
+            steps[0]["done"] = True  # once priorities ships, "search" (which has a page) is next
+            for step in steps:
+                step["is_next"] = step["key"] == "search"
+            return steps
+
+        self.client.force_login(self.make_user())
+        with patch.object(account_views, "_journey", search_is_next):
+            response = self.client.get(self.url)
+        self.assertContains(response, 'class="status status-next" href="/colleges/"')
+        self.assertContains(response, "Up next · Search colleges")
+
     def test_user_with_a_shortlist_sees_schools_and_steps_done(self):
         user = self.make_user()
         self.add_school(user, 900002)
@@ -421,5 +441,6 @@ class DashboardTests(TestCase):
     def test_no_link_points_at_a_page_that_does_not_exist_yet(self):
         self.client.force_login(self.make_user())
         response = self.client.get(self.url)
-        for path in ("/colleges/", "/shortlist/", "/profile/preferences/"):
-            self.assertNotContains(response, f'href="{path}')
+        self.assertContains(response, 'href="/colleges/"')
+        self.assertContains(response, 'href="/shortlist/"')
+        self.assertNotContains(response, 'href="/profile/preferences/')

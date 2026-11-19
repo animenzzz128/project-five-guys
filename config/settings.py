@@ -71,6 +71,7 @@ INSTALLED_APPS = [
     "accounts",  # B: sign up / log in / log out, page shell
     "abtest",  # C: A/B test page /fd986fa and /fd986fa/stats
     "core",  # D: domain models + seed command; A: /healthz
+    "ai",  # C: OpenRouter client shared by every AI feature
 ]
 
 MIDDLEWARE = [
@@ -195,3 +196,23 @@ LOGGING = {
 # --- Third-party services (used from Sprint 2 on) ---------------------------
 
 OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")
+
+
+# --- Error tracking (Sentry) -------------------------------------------------
+# Off unless SENTRY_DSN is set, so laptops, CI and tests never send events.
+# Set SENTRY_DSN and SENTRY_ENVIRONMENT (staging / production) in Render.
+
+SENTRY_DSN = os.environ.get("SENTRY_DSN", "")
+if SENTRY_DSN:
+    import sentry_sdk
+
+    from config.sentry import SENTRY_PRIVACY_OPTIONS
+
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        environment=os.environ.get("SENTRY_ENVIRONMENT", "development"),
+        release=os.environ.get("RENDER_GIT_COMMIT"),  # Render sets this per deploy
+        # Performance tracing is opt-in (0 = errors only); scrubbed either way.
+        traces_sample_rate=float(os.environ.get("SENTRY_TRACES_SAMPLE_RATE", "0")),
+        **SENTRY_PRIVACY_OPTIONS,
+    )

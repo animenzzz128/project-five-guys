@@ -1,0 +1,175 @@
+"""Browser tests (Playwright) and accessibility checks (axe-core).
+
+They start a real Django server and drive Chromium, so they are slower than
+the unit tests and are tagged "e2e". CI runs them in their own job:
+
+    python manage.py test --tag e2e        # only these
+    python manage.py test --exclude-tag e2e  # everything else
+
+Locally, install the browser once with `playwright install chromium`.
+"""
+
+import os
+
+from axe_playwright_python.sync_playwright import Axe
+from django.contrib.staticfiles.testing import StaticLiveServerTestCase
+from django.test import tag
+from playwright.sync_api import sync_playwright
+
+from abtest.models import Click, Impression
+from core.models import Institution
+from core.similarity import build_profiles
+
+# Pages every visitor can reach without logging in.
+PUBLIC_PAGES = [
+    "/", "/login/", "/signup/", "/fd986fa",
+    # College search, a college, and "Find similar" (#7, #16). AccessibilityTests
+    # creates the schools these need (see COLLEGES below).
+    "/colleges/", "/colleges/1001/", "/colleges/1001/similar/",
+]
+
+# Small fixture for the college pages: enough reported figures that
+# "Find similar" lists results with reasons instead of the no-data message.
+COLLEGES = [
+    (1001, "Harbor College", 5200, 61000, "0.1100", "0.8900", 79000),
+    (1002, "Ridge College", 5000, 60000, "0.1000", "0.9000", 80000),
+    (1003, "Valley University", 8000, 50000, "0.3000", "0.8000", 70000),
+]
+
+# axe impact levels that fail the build. "moderate" and "minor" are printed
+# but do not fail, so the team can fix them over time.
+BLOCKING_IMPACTS = {"critical", "serious"}
+
+# Known problems that already exist on main, as (path, axe rule id). Each one
+# has an issue; remove the entry when that issue is fixed. Anything new still
+# fails the build, so the list can only shrink.
+KNOWN_ISSUES = {
+    # Landing page pastel tags and grey text, #29. Exact elements only, so a
+    # NEW low-contrast element on "/" still fails. Delete entries as #29 is fixed.
+    ("/", "color-contrast"): {
+        ".feature-full.feature.glass > .feature-copy > .soon",
+        ".feature-wide.feature.glass > .feature-copy > .soon",
+        ".feature.glass:nth-child(2) > .feature-copy > .soon",
+        ".group-head > .tag-community.group-tag",
+        ".group-head > .tag-why.group-tag",
+        ".link-row:nth-child(1) > .tag-why.group-tag",
+        ".link-row:nth-child(2) > .tag-community.group-tag",
+        ".tag-curious",
+        ".well-hint",
+    },
+}
+
+
+@tag("e2e")
+class BrowserTestCase(StaticLiveServerTestCase):
+    @classmethod
+    def setUpClass(cls):
+        # Playwright's sync API runs an event loop; Django refuses ORM calls
+        # from a thread that has one unless this is set. Set only while these
+        # browser tests run, so unit tests keep Django's async-safety check.
+        cls._old_async_unsafe = os.environ.get("DJANGO_ALLOW_ASYNC_UNSAFE")
+        os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
+        super().setUpClass()
+        cls.playwright = sync_playwright().start()
+        cls.browser = cls.playwright.chromium.launch()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.browser.close()
+        cls.playwright.stop()
+        super().tearDownClass()
+        if cls._old_async_unsafe is None:
+            os.environ.pop("DJANGO_ALLOW_ASYNC_UNSAFE", None)
+        else:
+            os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = cls._old_async_unsafe
+
+    def setUp(self):
+        # A new context is a new visitor: fresh cookies, fresh session.
+        # Reduced motion: scroll-reveal animations finish instantly, so checks
+        # see the final colours instead of a half-faded frame.
+        self.context = self.browser.new_context(reduced_motion="reduce")
+        self.page = self.context.new_page()
+
+    def tearDown(self):
+        self.context.close()
+
+    def url(self, path):
+        return f"{self.live_server_url}{path}"
+
+
+class ABTestFlowTests(BrowserTestCase):
+    """The flow the course's grading bot follows, in a real browser."""
+
+    def test_variant_is_stable_and_click_counts_once(self):
+        self.page.goto(self.url("/fd986fa"))
+        button = self.page.locator("button#abtest")
+        self.assertEqual(button.count(), 1)
+        variant = button.inner_text().strip()
+        self.assertIn(variant, {"kudos", "thanks"})
+
+        self.page.reload()
+        self.assertEqual(self.page.locator("button#abtest").inner_text().strip(), variant)
+
+        self.page.locator("button#abtest").click()
+        self.page.wait_for_load_state()
+        # The button stays on the page after a click; a second click must not count.
+        self.page.locator("button#abtest").click()
+        self.page.wait_for_load_state()
+
+        self.assertEqual(Impression.objects.count(), 1)
+        self.assertEqual(Click.objects.count(), 1)
+        self.assertEqual(Click.objects.get().variant, variant)
+
+        stats = self.page.request.get(self.url("/fd986fa/stats")).json()
+        self.assertEqual(stats["preferred"], variant)
+
+    def test_two_visitors_count_two_impressions(self):
+        self.page.goto(self.url("/fd986fa"))
+        other = self.browser.new_context()
+        try:
+            other.new_page().goto(self.url("/fd986fa"))
+        finally:
+            other.close()
+        self.assertEqual(Impression.objects.count(), 2)
+
+    def test_no_horizontal_scroll_on_a_phone(self):
+        self.page.set_viewport_size({"width": 375, "height": 812})
+        self.page.goto(self.url("/fd986fa"))
+        overflow = self.page.evaluate("document.documentElement.scrollWidth > document.documentElement.clientWidth")
+        self.assertFalse(overflow)
+
+
+class AccessibilityTests(BrowserTestCase):
+    """axe-core checks on the public pages (WCAG 2 A/AA rules)."""
+
+    axe = Axe()
+
+    def setUp(self):
+        super().setUp()
+        for unitid, name, size, cost, admit, completion, earnings in COLLEGES:
+            Institution.objects.create(
+                unitid=unitid, name=name, city="New Haven", state="CT", ownership=2, region=1,
+                data_release="Scorecard e2e", enrollment_undergrad=size, cost_attendance=cost,
+                tuition_in_state=cost - 20000, admission_rate=admit, completion_rate_150=completion,
+                median_earnings_10yr=earnings,
+            )
+        build_profiles()
+
+    def test_public_pages_have_no_serious_violations(self):
+        failures = []
+        for path in PUBLIC_PAGES:
+            with self.subTest(path=path):
+                response = self.page.goto(self.url(path))
+                self.assertTrue(response.ok, f"{path} returned {response.status}")
+                results = self.axe.run(self.page)
+                for violation in results.response["violations"]:
+                    line = f"{path}: [{violation['impact']}] {violation['id']} - {violation['help']}"
+                    print(line)
+                    allowed = KNOWN_ISSUES.get((path, violation["id"]), set())
+                    targets = {" ".join(node["target"]) for node in violation["nodes"]}
+                    new_targets = sorted(targets - allowed)
+                    print(f"  targets: {sorted(targets)}")
+                    if violation["impact"] in BLOCKING_IMPACTS and new_targets:
+                        line += f" on {new_targets}"
+                        failures.append(line)
+        self.assertEqual(failures, [], "\n".join(failures))

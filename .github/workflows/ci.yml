@@ -5,12 +5,16 @@ on:
   push:
     branches: [main]
 
+# Least privilege for the GITHUB_TOKEN (CodeQL: actions/missing-workflow-permissions).
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:16
+        image: pgvector/pgvector:pg16 # adds the vector extension for #16
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
@@ -38,4 +42,37 @@ jobs:
       - name: Migrations are up to date
         run: python manage.py makemigrations --check --dry-run
       - name: Tests
-        run: python manage.py test --verbosity 2
+        run: python manage.py test --exclude-tag e2e --verbosity 2
+
+  e2e:
+    name: e2e + accessibility
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16 # vector extension for #16 (Find similar)
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: noble_shape
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DEBUG: "False"
+      SECRET_KEY: ci-only-not-secret-${{ github.run_id }}-padding-to-make-it-long-enough
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/noble_shape
+      SECURE_SSL_REDIRECT: "False"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: .python-version
+          cache: pip
+          cache-dependency-path: requirements*.txt
+      - run: pip install -r requirements-dev.txt
+      - name: Install Chromium for Playwright
+        run: python -m playwright install --with-deps chromium
+      - name: Browser and accessibility tests (Playwright + axe-core)
+        run: python manage.py test --tag e2e --verbosity 2
+        env:
+          DJANGO_ALLOW_ASYNC_UNSAFE: "true"
