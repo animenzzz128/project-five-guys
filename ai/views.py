@@ -50,6 +50,4 @@ def ask(request):
     interpretation = SearchInterpretation.objects.create(
         user=request.user, text=text, raw_json=raw, params=params, notes=notes,
     )
-    if notes:
-        messages.info(request, "Can't filter by: " + "; ".join(f"{n['phrase']} ({n['reason']})" for n in notes))
     return _colleges({**params, "interp": interpretation.pk})

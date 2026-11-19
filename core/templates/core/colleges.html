@@ -1,13 +1,14 @@
-{% extends "core/college_base.html" %}{% load static %}
+{% extends "core/college_base.html" %}{% load static ai_search %}
 {% block title %}Find colleges · Admit Compass{% endblock %}
 {% block content %}
 <header class="catalog-head"><h1>Find <span class="spectrum">colleges</span></h1></header>
-{% include "ai/search_box.html" %}
+{% ai_interpretation as interp %}{% include "ai/search_box.html" %}
 <div class="college-layout">
   <details class="filter-panel glass" open{% if form.errors %} data-has-errors{% endif %}>
     <summary>Filters</summary>
     <form class="college-filters" method="get" action="{% url 'colleges' %}">
-      {% for field in form %}
+      {% for field in form.hidden_fields %}{{ field.errors }}{{ field }}{% endfor %}
+      {% for field in form.visible_fields %}
         {% if field.name == "state" %}
           <details class="state-picker"{% if field.errors %} open{% endif %}>
             <summary>{{ field.label }}{% if field.value %} ({{ field.value|length }}){% endif %}</summary>
@@ -24,8 +25,9 @@
       <div class="result-heading"><h2 id="result-count">{{ page.paginator.count|floatformat:"0g" }} college{{ page.paginator.count|pluralize }}</h2>
         <span class="data-source">{% if demo %}Demo dataset{% else %}College Scorecard{% endif %}</span></div>
       {% with filters=form.active_filters %}{% if filters %}
-      <ul class="chips filter-chips" aria-label="Applied filters">{% for filter in filters %}
-        <li><a class="chip chip-on" href="{% url 'colleges' %}{% if filter.query %}?{{ filter.query }}{% endif %}" aria-label="Remove filter: {{ filter.label }}">{{ filter.label }} <span aria-hidden="true">×</span></a></li>
+      {% if interp %}<p class="ai-understood" id="ai-understood">AI understood:</p>{% endif %}
+      <ul class="chips filter-chips" aria-label="{% if interp %}AI understood{% else %}Applied filters{% endif %}">{% for filter in filters %}
+        <li><a class="chip chip-on{% if filter.kind == "prefer" %} chip-soft{% endif %}" href="{% url 'colleges' %}{% if filter.query %}?{{ filter.query }}{% endif %}" aria-label="Remove filter: {{ filter.label }}">{{ filter.label }} <span aria-hidden="true">×</span></a></li>
       {% endfor %}</ul>
       {% endif %}{% endwith %}
     </header>
@@ -36,9 +38,12 @@
         {% include "core/shortlist_control.html" with item_id=school.saved_item_id %}
       </div>
       {% include "core/college_metrics.html" %}
+      {% if school.match_reasons %}<ul class="match-reasons" aria-label="Why it matches">{% for reason in school.match_reasons %}<li>{{ reason }}</li>{% endfor %}</ul>{% endif %}
       {% include "core/find_similar_link.html" %}
     </article>
-    {% empty %}<p class="no-results">No colleges match these filters. <a href="{% url 'colleges' %}">Clear all filters</a></p>{% endfor %}
+    {% empty %}<div class="no-results"><p>No colleges match these filters. <a href="{% url 'colleges' %}">Clear all filters</a></p>
+      {% if relax %}<ul class="relax-list">{% for option in relax %}<li><a href="{% url 'colleges' %}?{{ option.query }}">Without “{{ option.label }}”: {{ option.count|floatformat:"0g" }} college{{ option.count|pluralize }} →</a></li>{% endfor %}</ul>{% endif %}
+    </div>{% endfor %}
     {% if page.has_other_pages %}<nav class="college-pager" aria-label="College results">
       {% if page.has_previous %}<a href="{% querystring page=page.previous_page_number %}">Previous</a>{% endif %}
       <span>Page {{ page.number }} of {{ page.paginator.num_pages }}</span>

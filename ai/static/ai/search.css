@@ -14,3 +14,16 @@
 .ai-search-examples button:hover { background: var(--fill-strong); }
 .ai-search-note { margin: 10px 0 0; font-size: .8rem; color: var(--ink-2); }
 @media (max-width: 520px) { .ai-search-row { flex-direction: column; } }
+.ai-result { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--separator); font-size: .9rem; }
+.ai-asked { margin: 0; overflow-wrap: anywhere; }
+.ai-cant { margin: 10px 0 4px; font-weight: 600; }
+.ai-cant-list { margin: 0; padding-left: 1.2em; color: var(--ink-2); overflow-wrap: anywhere; }
+.ai-understood { margin: 0 0 6px; font-size: .85rem; font-weight: 600; color: var(--ink-2); }
+/* Hybrid ranking on /colleges/: soft-preference chips, "why it matches", relax suggestions. */
+.chip-soft { background: var(--fill); color: var(--tint-ink); border: 1px dashed var(--tint-ink); }
+.chip-soft:hover { color: var(--tint-ink); background: var(--fill-strong); }
+.match-reasons { list-style: none; margin: 8px 0 0 56px; padding: 0; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: .82rem; color: var(--ink-2); }
+.match-reasons li { overflow-wrap: anywhere; }
+.match-reasons li::before { content: "✓ "; color: var(--ok); }
+.relax-list { margin: 10px 0 0; padding-left: 1.2em; }
+@media (max-width: 520px) { .match-reasons { margin-left: 0; } }
