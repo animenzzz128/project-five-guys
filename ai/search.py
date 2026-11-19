@@ -1,15 +1,16 @@
 """One-sentence college search (#38).  Owner: C.
 
-The LLM only turns the student's sentence into structured filters
-(`schemas/search_parse.json`). Everything after that is plain server code:
-`normalize` checks and clamps those filters and maps them onto the
-`/colleges/` query parameters (#7), so every result and every figure still
-comes from our database.
+Intent recognition, then retrieval. The LLM reads the student's sentence once
+and returns structured intent (`schemas/search_parse.json`): hard requirements
+(`must`), soft preferences (`prefer`), majors, a school to compare with, and
+the wishes no field can express. Everything after that is plain server code:
+`normalize` checks and clamps the reply and maps it onto the `/colleges/`
+query parameters, so every result and every figure comes from our database.
 
-Sprint 2 maps the filters the list already supports: name, state, school
-type, in-state tuition and size. The other schema fields (regions, cost,
-admission rate, earnings, completion, "similar to", sort) are kept as notes,
-never guessed into a filter; Sprint 3 turns them into real filters.
+This first version maps the hard requirements the list already filters by:
+name, state, school type, in-state tuition and size. Everything else the
+model understood is shown to the student as a note, never guessed into a
+filter.
 """
 
 import json
@@ -31,41 +32,49 @@ US_STATES = frozenset(
 )
 OWNERSHIP = {"public": Institution.Ownership.PUBLIC, "private": Institution.Ownership.PRIVATE_NONPROFIT}
 NOT_YET = "Not available as a filter yet"
-LATER_FIELDS = {
+LATER_MUST = {
     "regions": "region", "max_cost": "total cost of attendance", "min_admit": "minimum admission rate",
-    "max_admit": "maximum admission rate", "min_earnings": "graduate earnings",
-    "min_completion": "graduation rate", "similar_to_name": "similar to a school", "sort": "sort order",
+    "max_admit": "maximum admission rate", "min_earnings": "graduate earnings", "min_completion": "graduation rate",
 }
 
-SYSTEM_PROMPT = """You turn one sentence from a prospective U.S. undergraduate student into search filters for a
-college list. The sentence may be in English or Chinese. Only fill a field when the sentence asks for it; leave
-every other field null (or an empty list). Never invent a school, a number the student did not imply, or a filter
-for something the fields cannot express.
+SYSTEM_PROMPT = """You read one sentence from a prospective U.S. undergraduate student describing the college they
+want, and return their intent as structured search parameters. The sentence may be in English or Chinese. You never
+answer the question yourself, never name or recommend schools, and never invent numbers.
 
-Fields:
-- name_query: part of a college name the student typed, only if they named a school to search for.
-- regions / states: where. Use states (two-letter codes) when the student names states; regions for broad areas.
-- control: "public" or "private".
-- max_tuition: in-state tuition ceiling in US dollars per year. max_cost: total cost of attendance ceiling.
-- size_min / size_max: number of undergraduates.
-- min_admit / max_admit: admission rate as a fraction 0-1. min_completion: graduation rate 0-1.
-- min_earnings: median earnings ten years after entry, US dollars.
-- similar_to_name: a school the student wants colleges "like"; copy the name exactly as written.
-- sort: only if the student says how to order results.
-- unsupported: every wish no field can express (majors, campus vibe, weather, sports, dorms, safety, ...),
-  as {"phrase": the student's words, "reason": a short reason}. Never turn these into other filters.
+intent:
+- "search": they describe the kind of college they want (the usual case).
+- "similar": they want colleges like a named school; put that name in similar_to_name exactly as written.
+- "name_lookup": they only typed (part of) a college name; put it in name_query.
+- "out_of_scope": not a request to find colleges (essays, visas, chit-chat). Leave everything else empty.
 
-Defaults for vague words (use exactly these numbers):
-- "cheap", "affordable", "not too expensive" -> max_cost 40000
-- "under $X a year" with no other context -> max_cost X
-- "in-state tuition under $X" -> max_tuition X
-- "small" -> size_max 5000; "mid-sized" -> size_min 5000 and size_max 15000; "big" or "large" -> size_min 15000
-- "good salaries", "grads earn well" -> min_earnings 70000
-- "not too hard to get into" -> min_admit 0.3; "selective" -> max_admit 0.3"""
+must = hard requirements, things a college has to satisfy:
+- places the student names: states (two-letter codes) or regions (northeast = New England, mid_atlantic, south,
+  midwest, southwest, west = Mountain West, pacific). "The Northeast" / "the East Coast" in everyday speech means
+  both northeast and mid_atlantic.
+- control: "public" or "private", only when stated.
+- explicit numbers or limits: "under $40k a year" -> max_cost 40000; "in-state tuition under $15k" -> max_tuition
+  15000; "fewer than 5,000 students" -> size_max 5000; "at least 20,000 students" -> size_min 20000;
+  admission and graduation rates as fractions 0-1; min_earnings in US dollars.
+- "mid-sized" is a range the student means literally: size_min 5000 and size_max 15000.
+
+prefer = soft preferences: vague or comparative wishes that should rank colleges, not exclude them. Use only these
+factors, weight 1 (nice to have), 2 (important) or 3 (the student stresses it, e.g. "most of all"):
+  low_cost ("cheap", "affordable", "not too expensive"), low_tuition, high_earnings ("grads earn well",
+  "good salaries"), high_completion ("people actually graduate"), high_retention, low_debt ("graduate without much
+  debt"), selective ("prestigious", "hard to get into"), accessible ("not too hard to get into", "easy to get
+  in"), small ("small", "close-knit"), large ("big school", "lots of students").
+Do not also turn a preference into a must number.
+
+majors: fields of study the student wants, in plain English as they would appear in a U.S. catalog
+("computer science", "nursing", "mechanical engineering"); translate Chinese ("计算机" -> "computer science").
+
+unsupported: every wish none of the above can express (campus vibe, weather, sports, dorms, safety, religion,
+specific clubs, ...), as {"phrase": the student's own words, "reason": a short reason}. Never squeeze these into
+other fields. Leave any field the sentence does not mention null or empty."""
 
 
 def parse_sentence(text, user):
-    """Ask the LLM for filters. Raises ai.client.AIUnavailable / AIBadOutput / AILimitReached."""
+    """Ask the LLM for the sentence's intent. Raises ai.client.AIUnavailable / AIBadOutput / AILimitReached."""
     return complete_json(task="search_parse", system=SYSTEM_PROMPT, user=text, schema=SCHEMA, user_obj=user)
 
 
@@ -84,9 +93,10 @@ def _whole(value, high):
 def normalize(raw, states_with_colleges):
     """Map a validated search_parse reply to `/colleges/` params plus notes for what was not applied.
 
-    Returns (params, notes): params is {name: str | list[str]} in #7's names; notes is
+    Returns (params, notes): params is {name: str | list[str]} in the list's names (#7); notes is
     [{"phrase", "reason"}] for the student to see. No value is guessed or defaulted here.
     """
+    must = raw.get("must") or {}
     params, notes = {}, []
 
     name = (raw.get("name_query") or "").strip()[:MAX_NAME]
@@ -94,7 +104,7 @@ def normalize(raw, states_with_colleges):
         params["q"] = name
 
     states = []
-    for code in raw.get("states") or []:
+    for code in must.get("states") or []:
         code = code.upper()
         if code not in US_STATES or code in states:
             continue
@@ -105,14 +115,14 @@ def normalize(raw, states_with_colleges):
     if states:
         params["state"] = states
 
-    if raw.get("control") in OWNERSHIP:
-        params["ownership"] = str(OWNERSHIP[raw["control"]].value)
+    if must.get("control") in OWNERSHIP:
+        params["ownership"] = str(OWNERSHIP[must["control"]].value)
 
-    tuition = _whole(raw.get("max_tuition"), MAX_TUITION)
+    tuition = _whole(must.get("max_tuition"), MAX_TUITION)
     if tuition is not None:
         params["tuition_max"] = tuition
 
-    low, high = _whole(raw.get("size_min"), MAX_SIZE), _whole(raw.get("size_max"), MAX_SIZE)
+    low, high = _whole(must.get("size_min"), MAX_SIZE), _whole(must.get("size_max"), MAX_SIZE)
     if low is not None and high is not None and int(low) > int(high):
         notes.append({"phrase": f"{low}–{high} students", "reason": "Minimum size is above maximum size"})
     else:
@@ -121,12 +131,17 @@ def normalize(raw, states_with_colleges):
         if high is not None:
             params["size_max"] = high
 
-    for field, label in LATER_FIELDS.items():
-        value = raw.get(field)
-        if value in (None, [], "", "relevance"):
-            continue
-        shown = ", ".join(value) if isinstance(value, list) else value
-        notes.append({"phrase": f"{label}: {shown}", "reason": NOT_YET})
+    for field, label in LATER_MUST.items():
+        value = must.get(field)
+        if value not in (None, [], ""):
+            shown = ", ".join(value) if isinstance(value, list) else value
+            notes.append({"phrase": f"{label}: {shown}", "reason": NOT_YET})
+    for wish in raw.get("prefer") or []:
+        notes.append({"phrase": f"preference: {wish['factor'].replace('_', ' ')}", "reason": NOT_YET})
+    for major in raw.get("majors") or []:
+        notes.append({"phrase": f"major: {major}", "reason": NOT_YET})
+    if (raw.get("similar_to_name") or "").strip():
+        notes.append({"phrase": f"like {raw['similar_to_name'].strip()}", "reason": NOT_YET})
 
     for wish in raw.get("unsupported") or []:
         notes.append({"phrase": wish["phrase"], "reason": wish["reason"]})

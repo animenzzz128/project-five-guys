@@ -42,6 +42,10 @@ def ask(request):
         messages.info(request, UNAVAILABLE)
         return _colleges({"q": text[:MAX_NAME]})
 
+    if raw.get("intent") == "out_of_scope":
+        messages.info(request, "That doesn't look like a college search. Describe the kind of college you want.")
+        return _colleges()
+
     params, notes = normalize(raw, available_states())
     interpretation = SearchInterpretation.objects.create(
         user=request.user, text=text, raw_json=raw, params=params, notes=notes,

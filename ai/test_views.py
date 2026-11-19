@@ -41,7 +41,8 @@ class AskViewTests(TestCase):
         return [str(m) for m in response.wsgi_request._messages]
 
     def test_sentence_becomes_college_filters(self):
-        reply = {"states": ["CT", "ZZ"], "control": "private", "size_min": 5000, "size_max": 15000,
+        reply = {"intent": "search", "must": {"states": ["CT", "ZZ"], "control": "private", "size_min": 5000,
+                                              "size_max": 15000},
                  "unsupported": [{"phrase": "nice dorms", "reason": "No housing data"}]}
         with fake_ai([reply]) as calls:
             response = self.ask()
@@ -57,14 +58,22 @@ class AskViewTests(TestCase):
         self.assertIn("Can't filter by: nice dorms", self.messages(response)[0])
 
     def test_redirected_list_shows_the_matching_colleges(self):
-        with fake_ai([{"control": "public", "size_max": 5000}]):
+        with fake_ai([{"must": {"control": "public", "size_max": 5000}}]):
             response = self.client.post(URL, {"text": "a small public college"}, follow=True)
         self.assertContains(response, "Small Public College")
         self.assertNotContains(response, "Big Public University")
         self.assertNotContains(response, "Coastal Private College")
 
+    def test_out_of_scope_sentence_does_not_search(self):
+        with fake_ai([{"intent": "out_of_scope"}]):
+            response = self.ask(text="how do I write my Common App essay?")
+        self.assertEqual(response["Location"], "/colleges/")
+        self.assertIn("That doesn't look like a college search", self.messages(response)[0])
+        self.assertEqual(self.client.session["ai_search_text"], "how do I write my Common App essay?")
+        self.assertFalse(SearchInterpretation.objects.exists())
+
     def test_example_button_is_used_as_the_sentence(self):
-        with fake_ai([{"control": "public"}]) as calls:
+        with fake_ai([{"must": {"control": "public"}}]) as calls:
             self.ask(text="", example="A big public university")
         self.assertEqual(calls.call_args.args[0]["messages"][-1]["content"], "A big public university")
 
@@ -91,7 +100,7 @@ class AskViewTests(TestCase):
         self.assertFalse(SearchInterpretation.objects.exists())
 
     def test_bad_output_falls_back_to_a_name_search(self):
-        with fake_ai(["not json", {"control": "maybe"}]):
+        with fake_ai(["not json", {"must": {"control": "maybe"}}]):
             response = self.ask(text="Michigan")
         self.assertEqual(query(response), ("/colleges/", {"q": ["Michigan"]}))
 
