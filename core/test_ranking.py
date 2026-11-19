@@ -67,6 +67,14 @@ class RankTests(TestCase):
         self.assertEqual(len(top.reasons), 2)
         self.assertTrue(top.reasons[1].startswith("Cost $40,000"))
 
+    def test_schools_without_any_requested_figure_sort_after_every_judged_school(self):
+        # #46 review: "A Missing" (no cost) and "Z Expensive" (worst cost) both scored 0; name order put A first.
+        Institution.objects.all().delete()
+        for unit, name, cost in ((1, "A Missing", None), (2, "B Cheap", 10000), (3, "Z Expensive", 90000)):
+            Institution.objects.create(unitid=unit, name=name, cost_attendance=cost, data_release="Federal")
+        names = [Institution.objects.get(pk=r.pk).name for r in rank(Institution.objects.all(), [("low_cost", 1)])]
+        self.assertEqual(names, ["B Cheap", "Z Expensive", "A Missing"])
+
     def test_extra_scores_join_the_ranking(self):
         pk = {u: Institution.objects.get(unitid=u).pk for u in (1, 2, 3, 4)}
         extra = {pk[3]: (1.0, "Most similar to Yale"), pk[1]: (0.0, "")}
@@ -96,6 +104,15 @@ class MajorTests(TestCase):
     def test_keyword_finds_bachelor_fields_most_common_first(self):
         self.assertEqual(match_majors("computer science"),
                          [("1107", "Computer Science"), ("3008", "Mathematics and Computer Science")])
+
+    def test_every_matching_field_is_returned_unless_a_display_limit_is_asked(self):
+        # #46 review: a default limit of 5 fields silently dropped schools from the major filter.
+        school = Institution.objects.get(unitid=1)
+        for i in range(7):
+            Program.objects.create(institution=school, cip_code=f"14{i:02}", name=f"Engineering Field {i}.",
+                                   credential_level=3, degree="Bachelor's degree")
+        self.assertEqual(len(match_majors("engineering")), 7)
+        self.assertEqual(len(match_majors("engineering", limit=3)), 3)
 
     def test_non_bachelor_records_do_not_count(self):
         self.assertEqual(match_majors("nursing"), [])

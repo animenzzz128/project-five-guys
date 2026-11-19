@@ -124,6 +124,8 @@ def rank(schools, prefer, extra=None, extra_weight=2):
             earned += extra_weight * p
             reasons.append((extra_weight * p + 1, 0, text, None))  # always listed first when present
         score = 0.0 if not reported else (earned / reported) * (0.5 + 0.5 * reported / total)
+        # A school with no usable figure for any requested factor can't be judged at all: it goes after every
+        # school that could, even one that scored 0 by being the worst on the figures it reports.
         reasons.sort(key=lambda reason: -reason[0])
         shown = []
         for _, p, text, factor in reasons[:MAX_REASONS]:
@@ -131,17 +133,22 @@ def rank(schools, prefer, extra=None, extra_weight=2):
                 text = f"{text} · {factor.word} than {round(p * 100)}% of matches"
             if text:
                 shown.append(text)
-        ranked.append((score, row["name"], row["unitid"], Ranked(row["pk"], round(score, 6), shown)))
-    ranked.sort(key=lambda item: (-item[0], item[1], item[2]))
-    return [item[3] for item in ranked]
+        ranked.append((not reported, score, row["name"], row["unitid"], Ranked(row["pk"], round(score, 6), shown)))
+    ranked.sort(key=lambda item: (item[0], -item[1], item[2], item[3]))
+    return [item[4] for item in ranked]
 
 
-def match_majors(keyword, limit=5):
-    """[(cip_code, field name)] of bachelor's fields whose name contains `keyword`, most widely offered first."""
+def match_majors(keyword, limit=None):
+    """[(cip_code, field name)] of bachelor's fields whose name contains `keyword`, most widely offered first.
+
+    Filtering must use every match (pass no limit); `limit` is only for showing a few names.
+    """
     keyword = " ".join(keyword.split())[:60]
     if not keyword:
         return []
     fields = (Program.objects.filter(credential_level=3, name__icontains=keyword)
               .values("cip_code", "name").annotate(schools=Count("institution", distinct=True))
-              .order_by("-schools", "cip_code")[:limit])
+              .order_by("-schools", "cip_code"))
+    if limit is not None:
+        fields = fields[:limit]
     return [(row["cip_code"], row["name"].rstrip(".")) for row in fields]

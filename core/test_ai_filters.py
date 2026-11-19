@@ -129,6 +129,17 @@ class HybridRankingTests(TestCase):
         self.assertEqual(set(self.ids(major="computer science")), {1, 3})
         self.assertEqual(self.ids(major="underwater basket weaving"), [])
 
+    def test_major_filter_uses_every_matching_field(self):
+        # Six engineering fields, one school each: all six schools must match, not just the top five fields.
+        for i in range(6):
+            school = Institution.objects.create(unitid=500 + i, name=f"Engineering School {i}", data_release="Federal")
+            Program.objects.create(institution=school, cip_code=f"14{i:02}", name=f"Engineering Field {i}.",
+                                   credential_level=3, degree="Bachelor's degree")
+        self.assertEqual(set(self.ids(major="engineering")), {500, 501, 502, 503, 504, 505})
+
+    def test_no_data_schools_rank_last_even_against_a_zero_score(self):
+        self.assertEqual(self.ids(prefer="low_cost:1")[-1], 5)
+
     def test_each_soft_and_major_chip_removes_only_itself(self):
         response = self.page(prefer=["low_cost:2", "high_earnings:1"], major=["computer science", "nursing"],
                              state=["CT", "MI"])
