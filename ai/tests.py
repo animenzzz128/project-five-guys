@@ -207,6 +207,27 @@ class ParserLimitTests(SimpleTestCase):
         self.assertEqual(loads.call_count, 1)  # only the valid reply was parsed
 
 
+class NonFiniteNumberTests(SimpleTestCase):
+    """NaN / Infinity pass Python's json.loads and even schema bounds; they must be bad output (#45 review)."""
+
+    SCHEMA = {"type": "object", "properties": {"rate": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+                                               "big": {"type": ["number", "null"]}}}
+
+    def test_each_non_finite_form_is_retried_then_bad_output(self):
+        for reply in ('{"rate": NaN}', '{"big": Infinity}', '{"big": -Infinity}', '{"big": 1e999}'):
+            with self.subTest(reply=reply):
+                with fake_ai([reply, '{"rate": 0.5}']) as calls:
+                    self.assertEqual(ask(schema=self.SCHEMA), {"rate": 0.5})
+                self.assertEqual(calls.call_count, 2)
+                with fake_ai([reply, reply]):
+                    with self.assertRaises(AIBadOutput):
+                        ask(schema=self.SCHEMA)
+
+    def test_ordinary_floats_still_parse(self):
+        with fake_ai(['{"rate": 0.25, "big": 1e300}']):
+            self.assertEqual(ask(schema=self.SCHEMA), {"rate": 0.25, "big": 1e300})
+
+
 class FakeAiTests(SimpleTestCase):
     def test_raises_exceptions_in_order(self):
         with fake_ai([AIUnavailable("down")]):
